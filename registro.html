@@ -188,6 +188,45 @@
       </form>
     </section>
   </main>
+  <script>
+  const registroForm = document.querySelector('form');
+
+  registroForm.addEventListener('submit', async (e) => {
+    e.preventDefault();
+
+    const formData = new FormData(registroForm);
+    const data = Object.fromEntries(formData.entries());
+
+    // Validar que todos los campos estén llenos
+    const camposRequeridos = ['nombre', 'apellido', 'telefono', 'correo', 'sexo', 'contraseña'];
+    for (const campo of camposRequeridos) {
+      if (!data[campo]) {
+        alert('Por favor completa todos los campos.');
+        return;
+      }
+    }
+
+    try {
+      const res = await fetch('/register', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data),
+      });
+
+      const message = await res.text();
+
+      alert(message);
+
+      if (res.ok) {
+        alert('¡Registro completado con éxito!');
+        registroForm.reset();
+      }
+    } catch (error) {
+      alert('Error en el servidor. Intenta más tarde.');
+    }
+  });
+</script>
+
 </body>
 </html>
 
