@@ -36,3 +36,25 @@ app.get('*', (req, res) => {
 app.listen(PORT, () => {
   console.log(`Servidor corriendo en http://localhost:${PORT}`);
 });
+
+app.get('/crear-tabla-usuarios', async (req, res) => {
+  try {
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS usuarios (
+        id SERIAL PRIMARY KEY,
+        nombre VARCHAR(100) NOT NULL,
+        apellido VARCHAR(100),
+        telefono VARCHAR(20),
+        correo VARCHAR(150) UNIQUE NOT NULL,
+        sexo CHAR(1),
+        contraseña TEXT NOT NULL,
+        creado_en TIMESTAMP DEFAULT NOW()
+      );
+    `);
+    res.send('Tabla usuarios creada correctamente.');
+  } catch (error) {
+    console.error(error);
+    res.status(500).send('Error al crear la tabla de usuarios');
+  }
+});
+
