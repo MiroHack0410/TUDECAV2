@@ -92,4 +92,34 @@ app.listen(PORT, () => {
   console.log(`Servidor corriendo en http://localhost:${PORT}`);
 });
 
+app.use(express.json()); // Importante para parsear JSON en body
+
+app.post('/login', async (req, res) => {
+  const { correo, contraseña } = req.body;
+
+  if (!correo || !contraseña) {
+    return res.status(400).send('Completa todos los campos.');
+  }
+
+  try {
+    const result = await pool.query('SELECT * FROM usuarios WHERE correo = $1', [correo]);
+
+    if (result.rows.length === 0) {
+      return res.status(400).send('Correo incorrecto');
+    }
+
+    const usuario = result.rows[0];
+
+    if (usuario.contraseña !== contraseña) {
+      return res.status(400).send('Contraseña incorrecta');
+    }
+
+    res.send('Inicio de sesión correcto');
+  } catch (error) {
+    console.error(error);
+    res.status(500).send('Error del servidor');
+  }
+});
+
+
 
