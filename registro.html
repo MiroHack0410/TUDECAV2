@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Registro - TUDECA</title>
+  <style>
+    body {
+      margin: 0;
+      font-family: Arial, sans-serif;
+      background-color: #e7f1df;
+    }
+
+    .navbar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background-color: #5a9352;
+      padding: 10px 20px;
+    }
+
+    .menu-container {
+      position: relative;
+    }
+
+    .menu-button {
+      background-color: #4a7946;
+      color: white;
+      padding: 10px;
+      font-size: 16px;
+      border: none;
+      cursor: pointer;
+    }
+
+    .dropdown-content {
+      display: none;
+      position: absolute;
+      background-color: #2d4729;
+      box-shadow: 0px 8px 16px rgba(0,0,0,0.2);
+      z-index: 1;
+    }
+
+    .dropdown-content a {
+      color: white;
+      padding: 12px 16px;
+      display: block;
+      text-decoration: none;
+    }
+
+    .dropdown-content a:hover {
+      background-color: #3e6142;
+    }
+
+    .menu-container:hover .dropdown-content {
+      display: block;
+    }
+
+    h1 {
+      font-size: 24px;
+      color: black;
+      font-weight: bold;
+    }
+
+    .user-icon {
+      width: 32px;
+      height: 32px;
+      background-color: #2d4729;
+      border-radius: 50%;
+      background-image: url('https://cdn-icons-png.flaticon.com/512/1077/1077012.png');
+      background-size: cover;
+      background-position: center;
+    }
+
+    main {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: calc(100vh - 60px);
+      padding: 20px;
+    }
+
+    .form-box {
+      background-color: white;
+      border: 1px solid #ccc;
+      padding: 30px 40px;
+      box-shadow: 0 0 8px rgba(0, 0, 0, 0.15);
+      max-width: 400px;
+      width: 100%;
+      margin: auto;
+      text-align: left;
+      border-radius: 10px;
+    }
+
+    .form-box h2 {
+      text-align: center;
+      border-bottom: 2px solid #5a9352;
+      padding-bottom: 10px;
+      margin-bottom: 25px;
+    }
+
+    label {
+      display: block;
+      margin-bottom: 6px;
+      font-weight: bold;
+      color: #333;
+    }
+
+    input[type="text"],
+    input[type="email"],
+    input[type="password"] {
+      width: 100%;
+      padding: 10px;
+      border: 1px solid #aaa;
+      border-radius: 5px;
+      font-size: 14px;
+      margin-bottom: 15px;
+    }
+
+    .sexo-options {
+      display: flex;
+      gap: 15px;
+      margin-bottom: 15px;
+    }
+
+    .sexo-options label {
+      font-weight: normal;
+      display: flex;
+      align-items: center;
+      gap: 5px;
+    }
+
+    .signin-btn {
+      background-color: #5a9352;
+      color: white;
+      border: none;
+      padding: 10px 25px;
+      cursor: pointer;
+      font-weight: bold;
+      width: 100%;
+    }
+
+    .signin-btn:hover {
+      background-color: #4a7946;
+    }
+  </style>
+</head>
+<body>
+  <header class="navbar">
+    <div class="menu-container">
+      <button class="menu-button">Menú ▼</button>
+      <div class="dropdown-content">
+        <a href="Hotel.html">Hoteles</a>
+        <a href="restaurantes.html">Restaurantes</a>
+        <a href="puntos_interes.html">Atracciones</a>
+      </div>
+    </div>
+    <h1>TUDECA</h1>
+    <div><a href="index.html" class="signup-btn-link">Inicio</a></div>
+  </header>
+
+  <main>
+    <section class="form-box">
+      <h2>Registro</h2>
+      <form>
+        <label for="nombre">Nombre:</label>
+        <input type="text" id="nombre" name="nombre" required>
+
+        <label for="apellido">Apellido:</label>
+        <input type="text" id="apellido" name="apellido" required>
+
+        <label for="telefono">Teléfono:</label>
+        <input type="text" id="telefono" name="telefono">
+
+        <label for="correo">Correo:</label>
+        <input type="email" id="correo" name="correo" placeholder="ejemplo@correo.com" required>
+
+        <label>Sexo:</label>
+        <div class="sexo-options">
+          <label><input type="radio" name="sexo" value="M" required> Masculino</label>
+          <label><input type="radio" name="sexo" value="F"> Femenino</label>
+          <label><input type="radio" name="sexo" value="O"> Otro</label>
+        </div>
+
+        <label for="contraseña">Contraseña:</label>
+        <input type="password" id="contraseña" name="contraseña" required>
+
+        <button type="submit" class="signin-btn">REGISTRARME</button>
+      </form>
+    </section>
+  </main>
+</body>
+</html>
+
+
+

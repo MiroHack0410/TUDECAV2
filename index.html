@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <title>Inicio - TUDECA</title>
+    <link rel="stylesheet" href="estilos.css" />
+    <style>
+        body {
+            margin: 0;
+            font-family: Arial, sans-serif;
+            background-color: #e7f1df;
+        }
+
+        .navbar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background-color: #5a9352;
+            padding: 10px 20px;
+        }
+
+        .dropdown {
+            position: relative;
+        }
+
+        .dropbtn {
+            background-color: #4a7946;
+            color: white;
+            padding: 10px;
+            font-size: 16px;
+            border: none;
+            cursor: pointer;
+        }
+
+        .dropdown-content {
+            display: none;
+            position: absolute;
+            background-color: #2d4729;
+            box-shadow: 0px 8px 16px rgba(0,0,0,0.2);
+            z-index: 1;
+        }
+
+        .dropdown-content a {
+            color: white;
+            padding: 12px 16px;
+            display: block;
+            text-decoration: none;
+        }
+
+        .dropdown-content a:hover {
+            background-color: #3e6142;
+        }
+
+        .dropdown:hover .dropdown-content {
+            display: block;
+        }
+
+        .title {
+            font-size: 24px;
+            color: black;
+            font-weight: bold;
+        }
+
+        section {
+            padding: 60px 20px;
+            max-width: 1000px;
+            margin: auto;
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            justify-content: space-between;
+            gap: 40px;
+        }
+
+        section:nth-child(even) {
+            flex-direction: row-reverse;
+            background-color: #f0f8eb;
+        }
+
+        .text-content {
+            flex: 1;
+            min-width: 300px;
+        }
+
+        .text-content h2 {
+            color: #5a9352;
+            font-size: 28px;
+            margin-bottom: 15px;
+        }
+
+        .text-content p, .text-content ul {
+            font-size: 18px;
+            line-height: 1.6;
+            text-align: justify;
+        }
+
+        .text-content ul {
+            padding-left: 20px;
+        }
+
+        .image-content {
+            flex: 1;
+            min-width: 300px;
+            text-align: center;
+        }
+
+        .image-content img {
+            max-width: 100%;
+            height: auto;
+            border-radius: 10px;
+        }
+
+        .cta {
+            text-align: center;
+        }
+
+        .signup-btn-link {
+            display: inline-block;
+            background-color: #5a9352;
+            color: white;
+            text-decoration: none;
+            padding: 10px 25px;
+            font-weight: bold;
+            border-radius: 2px;
+        }
+
+        .signup-btn-link:hover {
+            background-color: #4a7946;
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <div class="navbar">
+            <div class="dropdown">
+                <button class="dropbtn">Menú ▼</button>
+                <div class="dropdown-content">
+                    <a href="Hotel.html">Hoteles</a>
+                    <a href="restaurantes.html">Restaurantes</a>
+                    <a href="puntos_interes.html">Atracciones</a>
+                </div>
+            </div>
+            <div href="index.html" class="title">TUDECA</div>
+            <div><a href="index.html" class="signup-btn-link">Inicio</a></div>
+        </div>
+    </header>
+
+    <main>
+        <!-- Bienvenida -->
+        <section>
+            <div class="text-content">
+                <h2>Bienvenido a TUDECA</h2>
+                <p>
+                    Descubre Catemaco, un rincón mágico en el corazón de Veracruz. Conocido por su belleza natural, cultura mística y hospitalidad, es el destino ideal para amantes de la naturaleza y la tranquilidad.
+                </p>
+            </div>
+            <div class="image-content">
+                <img src="C:\Users\emirb\OneDrive\Escritorio\ProyectoMasde\Imagenes\Logo Turismo y Aventura Viajes Minimalista Verde.png" alt="Logo TUDECA" style="width: 380px;">
+            </div>
+        </section>
+
+        <!-- Historia del Lago -->
+        <section>
+            <div class="text-content">
+                <h2>La historia del Lago de Catemaco</h2>
+                <p>
+                    El lago de Catemaco se originó dentro de un cráter volcánico hace miles de años. Con una extensión de 75 km², es el segundo lago más grande del estado y uno de los más antiguos. 
+                    A lo largo del tiempo, ha sido centro de vida, comercio y espiritualidad para los pueblos de la región.
+                </p>
+            </div>
+            <div class="image-content">
+                <img src="C:\Users\emirb\OneDrive\Escritorio\ProyectoMasde\Imagenes\Catemaco-laguna-dia-Veracruz.jpg" alt="Lago de Catemaco">
+            </div>
+        </section>
+
+        <!-- Datos interesantes -->
+        <section>
+            <div class="text-content">
+                <h2>¿Sabías que...?</h2>
+                <ul>
+                    <li>El lago alberga a una colonia de monos introducida desde Tailandia, en la Isla de los Monos.</li>
+                    <li>Catemaco es famoso por sus brujos y rituales de limpieza espiritual.</li>
+                    <li>La región está rodeada de selva tropical, ideal para senderismo y ecoturismo.</li>
+                    <li>Es hogar de aves endémicas, peces únicos y una rica biodiversidad.</li>
+                </ul>
+            </div>
+            <div class="image-content">
+                <img src="C:\Users\emirb\OneDrive\Escritorio\ProyectoMasde\Imagenes\Isla-de-los-monos-Catemaco-Veracruz.jpg" alt="Isla de los Monos">
+            </div>
+        </section>
+
+        <!-- CTA final -->
+        <section class="cta">
+            <div class="text-content">
+                <h2>Descubre más con TUDECA</h2>
+                <p>
+                    Planea tu viaje, reserva alojamiento, explora atracciones y disfruta de la cultura de Catemaco desde un solo lugar.
+                </p>
+                <a href="inicio_sesion.html" class="signup-btn-link">Iniciar Sesión</a>
+            </div>
+        </section>
+    </main>
+</body>
+</html>
