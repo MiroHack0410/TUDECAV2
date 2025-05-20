@@ -40,22 +40,32 @@ app.get('/crear-tabla-usuarios', async (req, res) => {
   }
 });
 
-// Ruta para registrar usuario desde formulario
-app.post('/registrar-usuario', async (req, res) => {
+app.post('/register', async (req, res) => {
   const { nombre, apellido, telefono, correo, sexo, contraseña } = req.body;
 
+  if (!nombre || !apellido || !telefono || !correo || !sexo || !contraseña) {
+    return res.status(400).send('Completa todos los campos.');
+  }
+
   try {
+    // Aquí validación para evitar correos repetidos si quieres
+    const existing = await pool.query('SELECT * FROM usuarios WHERE correo = $1', [correo]);
+    if (existing.rows.length > 0) {
+      return res.status(400).send('El correo ya está registrado.');
+    }
+
     await pool.query(
-      `INSERT INTO usuarios (nombre, apellido, telefono, correo, sexo, contraseña)
-       VALUES ($1, $2, $3, $4, $5, $6)`,
+      'INSERT INTO usuarios (nombre, apellido, telefono, correo, sexo, contraseña) VALUES ($1, $2, $3, $4, $5, $6)',
       [nombre, apellido, telefono, correo, sexo, contraseña]
     );
-    res.send('Usuario registrado exitosamente');
+
+    res.send('Registro completado con éxito');
   } catch (error) {
     console.error(error);
-    res.status(500).send('Error al registrar usuario');
+    res.status(500).send('Error del servidor');
   }
 });
+
 
 // Ruta para listar usuarios
 app.get('/usuarios', async (req, res) => {
