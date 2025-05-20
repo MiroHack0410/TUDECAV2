@@ -167,10 +167,10 @@
             <h3>Iniciar Sesión</h3>
             <form>
                 <label for="username">Correo:</label>
-                <input type="text" id="username" name="username" value="johndoe">
+                <input type="text" id="correo" name="correo" value="johndoe" required>
 
                 <label for="password">Contraseña:</label>
-                <input type="password" id="password" name="password" value="password">
+                <input type="password" id="contraseña" name="contraseña" value="password" required>
 
                 <button type="submit" class="signin-btn">Iniciar Sesión</button>
 
@@ -185,5 +185,45 @@
             </form>
         </div>
     </main>
+    <script>
+  const loginForm = document.querySelector('form');
+
+  loginForm.addEventListener('submit', async (e) => {
+    e.preventDefault();
+
+    const formData = new FormData(loginForm);
+    const data = Object.fromEntries(formData.entries());
+
+    if (!data.correo || !data.contraseña) {
+      alert('Por favor completa todos los campos.');
+      return;
+    }
+
+    try {
+      const res = await fetch('/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data),
+      });
+
+      const message = await res.text();
+
+      alert(message);
+
+      if (res.ok) {
+        // Mensaje para inicio de sesión correcto
+        alert('¡Inicio de sesión exitoso!');
+
+        // Aquí puedes redirigir a una página privada
+        // window.location.href = '/dashboard.html';
+
+        loginForm.reset();
+      }
+    } catch (error) {
+      alert('Error en el servidor. Intenta más tarde.');
+    }
+  });
+</script>
+
 </body>
 </html>
