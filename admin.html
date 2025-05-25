@@ -1,0 +1,242 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8" />
+<title>Admin TUDECA - Gestión de Lugares</title>
+<style>
+  body {
+    margin: 0; font-family: Arial, sans-serif; background-color: #e7f1df;
+  }
+  header {
+    background-color: #5a9352; padding: 10px 20px; color: white; font-weight: bold; font-size: 20px;
+  }
+  main {
+    padding: 20px;
+    max-width: 900px;
+    margin: auto;
+  }
+  select, input, textarea, button {
+    font-size: 16px;
+    margin: 5px 0 15px 0;
+    padding: 8px;
+    width: 100%;
+    box-sizing: border-box;
+  }
+  label {
+    font-weight: bold;
+  }
+  .card {
+    background: white;
+    border-radius: 6px;
+    box-shadow: 0 0 5px rgba(0,0,0,0.15);
+    margin-bottom: 15px;
+    padding: 15px;
+    position: relative;
+  }
+  .card h4 {
+    margin: 0 0 10px 0;
+  }
+  .stars {
+    color: #ffa500;
+    margin-bottom: 10px;
+  }
+  .desc, .direccion {
+    margin-bottom: 8px;
+    font-size: 14px;
+    color: #444;
+  }
+  .btn-group {
+    display: flex;
+    gap: 10px;
+    margin-top: 10px;
+  }
+  button {
+    cursor: pointer;
+    background-color: #5a9352;
+    border: none;
+    color: white;
+    padding: 8px 12px;
+    border-radius: 4px;
+    font-weight: bold;
+  }
+  button:hover {
+    background-color: #4a7946;
+  }
+  .reserva-btn {
+    background-color: #3e6b3d;
+    padding: 6px 10px;
+    font-size: 14px;
+  }
+</style>
+</head>
+<body>
+
+<header>Administración TUDECA</header>
+<main>
+
+  <label for="tipo">Seleccione Tipo:</label>
+  <select id="tipo">
+    <option value="hoteles">Hotel</option>
+    <option value="restaurantes">Restaurante</option>
+    <option value="puntos_interes">Punto de Interés</option>
+  </select>
+
+  <form id="formLugar">
+    <input type="hidden" id="itemId" value="">
+    <label for="nombre">Nombre</label>
+    <input type="text" id="nombre" required />
+    
+    <label for="estrellas">Estrellas (1 a 5)</label>
+    <input type="number" id="estrellas" min="1" max="5" required />
+    
+    <label for="descripcion">Descripción</label>
+    <textarea id="descripcion" rows="3" required></textarea>
+    
+    <label for="direccion">Dirección</label>
+    <input type="text" id="direccion" required />
+    
+    <label for="latitud">Latitud</label>
+    <input type="text" id="latitud" required />
+    
+    <label for="longitud">Longitud</label>
+    <input type="text" id="longitud" required />
+    
+    <button type="submit">Agregar / Actualizar</button>
+  </form>
+
+  <hr />
+
+  <h3>Lista de Lugares Agregados</h3>
+  <div id="lista"></div>
+</main>
+
+<script>
+  const tipoSelect = document.getElementById('tipo');
+  const form = document.getElementById('formLugar');
+  const listaDiv = document.getElementById('lista');
+  const itemIdInput = document.getElementById('itemId');
+
+  async function cargarLista() {
+    const tipo = tipoSelect.value;
+    const res = await fetch(`/api/${tipo}`);
+    const datos = await res.json();
+
+    listaDiv.innerHTML = '';
+
+    datos.forEach(item => {
+      const card = document.createElement('div');
+      card.className = 'card';
+      
+      const estrellas = '★'.repeat(item.estrellas) + '☆'.repeat(5 - item.estrellas);
+      
+      card.innerHTML = `
+        <h4>${item.nombre}</h4>
+        <div class="stars">${estrellas}</div>
+        <div class="desc">${item.descripcion}</div>
+        <div class="direccion"><strong>Dirección:</strong> ${item.direccion}</div>
+        <div><strong>Latitud:</strong> ${item.latitud}, <strong>Longitud:</strong> ${item.longitud}</div>
+        <a href="#" class="reserva-btn">Reserva</a>
+        <div class="btn-group">
+          <button onclick="editar(${item.id})">Editar</button>
+          <button onclick="eliminar(${item.id})">Eliminar</button>
+        </div>
+      `;
+
+      listaDiv.appendChild(card);
+    });
+  }
+
+  tipoSelect.addEventListener('change', () => {
+    limpiarFormulario();
+    cargarLista();
+  });
+
+  function limpiarFormulario() {
+    itemIdInput.value = '';
+    form.nombre.value = '';
+    form.estrellas.value = '';
+    form.descripcion.value = '';
+    form.direccion.value = '';
+    form.latitud.value = '';
+    form.longitud.value = '';
+  }
+
+  form.addEventListener('submit', async e => {
+    e.preventDefault();
+    const tipo = tipoSelect.value;
+
+    const data = {
+      nombre: form.nombre.value,
+      estrellas: parseInt(form.estrellas.value),
+      descripcion: form.descripcion.value,
+      direccion: form.direccion.value,
+      latitud: form.latitud.value,
+      longitud: form.longitud.value,
+    };
+
+    if (itemIdInput.value) {
+      // Actualizar
+      const id = itemIdInput.value;
+      const res = await fetch(`/api/${tipo}/${id}`, {
+        method: 'PUT',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify(data),
+      });
+      if (res.ok) {
+        alert('Actualizado con éxito');
+        limpiarFormulario();
+        cargarLista();
+      } else {
+        alert('Error al actualizar');
+      }
+    } else {
+      // Insertar
+      const res = await fetch(`/api/${tipo}`, {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify(data),
+      });
+      if (res.ok) {
+        alert('Agregado con éxito');
+        limpiarFormulario();
+        cargarLista();
+      } else {
+        alert('Error al agregar');
+      }
+    }
+  });
+
+  window.editar = async function(id) {
+    const tipo = tipoSelect.value;
+    const res = await fetch(`/api/${tipo}`);
+    const datos = await res.json();
+    const item = datos.find(i => i.id === id);
+    if (!item) return alert('No encontrado');
+
+    itemIdInput.value = item.id;
+    form.nombre.value = item.nombre;
+    form.estrellas.value = item.estrellas;
+    form.descripcion.value = item.descripcion;
+    form.direccion.value = item.direccion;
+    form.latitud.value = item.latitud;
+    form.longitud.value = item.longitud;
+  };
+
+  window.eliminar = async function(id) {
+    const tipo = tipoSelect.value;
+    if (!confirm('¿Eliminar este registro?')) return;
+    const res = await fetch(`/api/${tipo}/${id}`, { method: 'DELETE' });
+    if (res.ok) {
+      alert('Eliminado');
+      cargarLista();
+    } else {
+      alert('Error al eliminar');
+    }
+  };
+
+  // Inicializar
+  cargarLista();
+</script>
+
+</body>
+</html>
