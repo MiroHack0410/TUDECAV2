@@ -8,14 +8,14 @@ require('dotenv').config();
 
 const app = express();
 const PORT = process.env.PORT || 3000;
+const JWT_SECRET = process.env.JWT_SECRET || 'tu_clave_secreta_aqui';
 
-// Configurar conexión PostgreSQL
+// Conexión PostgreSQL
 const pool = new Pool({
   connectionString: process.env.DATABASE_URL,
   ssl: { rejectUnauthorized: false },
 });
 
-// Middleware
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
@@ -45,21 +45,22 @@ app.post('/crear-tabla-usuariosv2', async (req, res) => {
   }
 });
 
-// =====================
-// INSERTAR ADMIN AUTOMÁTICO
-// =====================
+// Inserción admin automática (igual que antes)
 (async () => {
   const adminCorreo = 'admin@tudeca.com';
   const adminPasswordPlano = 'emirbb18';
 
   try {
     const result = await pool.query('SELECT * FROM usuariosv2 WHERE correo = $1 AND rol = 1', [adminCorreo]);
+
     if (result.rows.length === 0) {
       const hashedPassword = await bcrypt.hash(adminPasswordPlano, 10);
+
       await pool.query(`
         INSERT INTO usuariosv2 (correo, password, rol)
         VALUES ($1, $2, 1)
       `, [adminCorreo, hashedPassword]);
+
       console.log('✅ Administrador insertado automáticamente');
     } else {
       console.log('🔎 El administrador ya existe');
@@ -91,7 +92,7 @@ app.post('/registro', async (req, res) => {
 });
 
 // =====================
-// INICIO DE SESIÓN
+// INICIO DE SESIÓN (login)
 // =====================
 app.post('/login', async (req, res) => {
   const { usuario, password } = req.body;
@@ -103,56 +104,60 @@ app.post('/login', async (req, res) => {
     );
 
     if (result.rows.length === 0) {
-      return res.status(401).json({ success: false, message: 'Usuario no encontrado' });
+      return res.status(401).send('Usuario no encontrado');
     }
 
     const user = result.rows[0];
     const isMatch = await bcrypt.compare(password, user.password);
 
     if (!isMatch) {
-      return res.status(401).json({ success: false, message: 'Contraseña incorrecta' });
+      return res.status(401).send('Contraseña incorrecta');
     }
 
-    const token = jwt.sign({
-      id: user.id,
-      nombre: user.nombre,
-      apellido: user.apellido,
-      correo: user.correo,
-      rol: user.rol
-    }, process.env.JWT_SECRET, { expiresIn: '1h' });
+    // Crear token JWT con datos básicos
+    const token = jwt.sign(
+      { id: user.id, correo: user.correo, nombre: user.nombre, rol: user.rol },
+      JWT_SECRET,
+      { expiresIn: '2h' }
+    );
 
-    // Enviar token en cookie httpOnly
-    res.cookie('token', token, { httpOnly: true, sameSite: 'lax' });
+    // Guardar token en cookie httpOnly (más seguro)
+    res.cookie('token', token, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production', // solo https en prod
+      maxAge: 2 * 60 * 60 * 1000, // 2 horas
+      sameSite: 'lax'
+    });
 
-    res.json({ success: true, message: 'Inicio de sesión exitoso', role: user.rol });
+    res.json({ mensaje: 'Login exitoso', rol: user.rol });
 
   } catch (error) {
     console.error('Error al iniciar sesión:', error);
-    res.status(500).json({ success: false, message: 'Error del servidor' });
+    res.status(500).send('Error del servidor');
   }
 });
 
 // =====================
-// OBTENER INFO DEL USUARIO LOGUEADO
+// OBTENER DATOS DEL USUARIO LOGUEADO
 // =====================
-app.get('/usuario', (req, res) => {
+app.get('/me', (req, res) => {
   const token = req.cookies.token;
-  if (!token) return res.status(401).json({ loggedIn: false });
+  if (!token) return res.status(401).send('No autenticado');
 
   try {
-    const userData = jwt.verify(token, process.env.JWT_SECRET);
-    res.json({ loggedIn: true, user: userData });
-  } catch {
-    res.status(401).json({ loggedIn: false });
+    const userData = jwt.verify(token, JWT_SECRET);
+    res.json(userData);
+  } catch (err) {
+    res.status(401).send('Token inválido');
   }
 });
 
 // =====================
-// CERRAR SESIÓN
+// CERRAR SESIÓN (logout)
 // =====================
 app.post('/logout', (req, res) => {
   res.clearCookie('token');
-  res.json({ success: true });
+  res.send('Sesión cerrada');
 });
 
 // =====================
@@ -165,5 +170,3 @@ app.get('*', (req, res) => {
 app.listen(PORT, () => {
   console.log(`Servidor corriendo en http://localhost:${PORT}`);
 });
-
-
