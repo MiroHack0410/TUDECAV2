@@ -3,80 +3,110 @@
 <head>
   <meta charset="UTF-8" />
   <title>TUDECA - Inicio de Sesión</title>
-  <style>
+    <style>
+    /* Conserva tu CSS original */
     body { margin: 0; font-family: Arial, sans-serif; background-color: #e7f1df; }
+
     .navbar {
+      background-color: #2a4d14;
+      color: white;
+      padding: 10px 20px;
       display: flex;
       justify-content: space-between;
       align-items: center;
-      background-color: #2f4f2f;
-      padding: 10px 20px;
-      color: white;
     }
+
+    .title {
+      font-size: 24px;
+      font-weight: bold;
+    }
+
+    .dropdown {
+      position: relative;
+      display: inline-block;
+    }
+
     .dropbtn {
-      background-color: #2f4f2f;
+      background-color: #2a4d14;
       color: white;
       border: none;
-      font-size: 16px;
       cursor: pointer;
+      font-size: 16px;
     }
+
     .dropdown-content {
       display: none;
       position: absolute;
-      background-color: #f9f9f9;
+      background-color: white;
       min-width: 160px;
+      box-shadow: 0px 8px 16px rgba(0,0,0,0.2);
       z-index: 1;
     }
-    .dropdown:hover .dropdown-content {
-      display: block;
-    }
+
     .dropdown-content a {
       color: black;
       padding: 12px 16px;
       text-decoration: none;
       display: block;
     }
-    .title {
-      font-size: 24px;
-      font-weight: bold;
+
+    .dropdown-content a:hover {
+      background-color: #ddd;
     }
+
+    .dropdown:hover .dropdown-content {
+      display: block;
+    }
+
     .signup-btn-link {
       color: white;
       text-decoration: none;
+      font-weight: bold;
     }
-    main {
-      padding: 20px;
-      display: flex;
-      justify-content: center;
-    }
+
     .login-box {
       background-color: white;
       padding: 30px;
-      border-radius: 10px;
-      box-shadow: 0 0 10px rgba(0,0,0,0.1);
+      margin: 80px auto;
       width: 300px;
+      border-radius: 10px;
+      box-shadow: 0px 0px 10px rgba(0,0,0,0.1);
     }
-    input[type="text"], input[type="password"] {
+
+    input[type="text"],
+    input[type="password"] {
       width: 100%;
-      padding: 10px;
-      margin: 8px 0;
-      box-sizing: border-box;
+      padding: 8px;
+      margin-top: 8px;
+      margin-bottom: 20px;
+      border: 1px solid #ccc;
+      border-radius: 4px;
     }
+
     .signin-btn {
-      background-color: #2f4f2f;
+      background-color: #4CAF50;
       color: white;
-      border: none;
       padding: 10px;
       width: 100%;
+      border: none;
+      border-radius: 4px;
       cursor: pointer;
-      border-radius: 5px;
+      font-size: 16px;
+    }
+
+    .signin-btn:hover {
+      background-color: #45a049;
+    }
+
+    .links, .signup-section {
+      text-align: center;
       margin-top: 10px;
     }
-    .signup-section {
-      margin-top: 20px;
-      text-align: center;
+
+    #error-message {
+      color: red;
+      margin-top: 10px;
     }
-    #error-message { color: red; margin-top: 10px; }
   </style>
 </head>
 <body>
