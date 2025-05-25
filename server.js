@@ -21,24 +21,53 @@ app.use(express.static(__dirname));
 // =====================
 // CREAR TABLA USUARIOSV2
 // =====================
-pool.query(`
-  CREATE TABLE IF NOT EXISTS usuariosv2 (
-    id SERIAL PRIMARY KEY,
-    nombre TEXT,
-    apellido TEXT,
-    telefono TEXT,
-    correo TEXT UNIQUE NOT NULL,
-    sexo TEXT,
-    password TEXT NOT NULL,
-    rol INTEGER NOT NULL CHECK (rol IN (1, 2))
-  )
-`, (err) => {
-  if (err) {
-    console.error('Error al crear tabla usuariosv2:', err);
-  } else {
-    console.log('Tabla usuariosv2 verificada/creada');
+app.post('/crear-tabla-usuariosv2', async (req, res) => {
+  try {
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS usuariosv2 (
+        id SERIAL PRIMARY KEY,
+        nombre TEXT,
+        apellido TEXT,
+        telefono TEXT,
+        correo TEXT UNIQUE NOT NULL,
+        sexo TEXT,
+        password TEXT NOT NULL,
+        rol INTEGER NOT NULL CHECK (rol IN (1, 2))
+      );
+    `);
+    res.send('✅ Tabla usuariosv2 creada/verificada');
+  } catch (error) {
+    console.error('❌ Error al crear la tabla usuariosv2:', error);
+    res.status(500).send('Error al crear la tabla');
   }
 });
+
+(async () => {
+  const adminCorreo = 'admin@tudeca.com';
+  const adminPasswordPlano = 'emirbb18';
+
+  try {
+    // Verificar si el admin ya existe
+    const result = await pool.query('SELECT * FROM usuariosv2 WHERE correo = $1 AND rol = 1', [adminCorreo]);
+
+    if (result.rows.length === 0) {
+      const hashedPassword = await bcrypt.hash(adminPasswordPlano, 10);
+
+      // Insertar administrador (solo correo, password y rol = 1)
+      await pool.query(`
+        INSERT INTO usuariosv2 (correo, password, rol)
+        VALUES ($1, $2, 1)
+      `, [adminCorreo, hashedPassword]);
+
+      console.log('✅ Administrador insertado automáticamente');
+    } else {
+      console.log('🔎 El administrador ya existe');
+    }
+  } catch (err) {
+    console.error('❌ Error al insertar administrador:', err);
+  }
+})();
+
 
 // =====================
 // REGISTRO DE TURISTA
