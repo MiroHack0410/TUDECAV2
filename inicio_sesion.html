@@ -135,10 +135,9 @@
             background-color: #4a7946;
         }
 
-        /* Estilo para mensaje de error */
-        #error-message {
-            color: red;
+        #loginMessage {
             margin-top: 10px;
+            font-weight: bold;
         }
     </style>
 </head>
@@ -178,12 +177,10 @@
                     <p>Crear Usuario</p>
                     <a href="registro.html" class="signup-btn-link">Registrarse</a>
                 </div>
-
-                <div id="error-message"></div>
             </form>
+            <div id="loginMessage"></div>
         </div>
     </main>
-    <div id="loginMessage" style="color:red; margin-top:10px;"></div>
 
 <script>
   const loginForm = document.getElementById('loginForm');
@@ -207,11 +204,16 @@
       if (result.success) {
         loginMessage.style.color = 'green';
         loginMessage.textContent = result.message;
+
         // Redirigir según rol:
         if (result.role === 1) {
-          window.location.href = '/admin.html';
+          setTimeout(() => {
+            window.location.href = '/admin.html';
+          }, 1500);
         } else if (result.role === 2) {
-          window.location.href = '/index.html';
+          setTimeout(() => {
+            window.location.href = '/index.html';
+          }, 1500);
         }
       } else {
         loginMessage.style.color = 'red';
