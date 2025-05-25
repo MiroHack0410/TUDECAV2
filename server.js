@@ -1,26 +1,24 @@
+// server.js
 const express = require('express');
 const path = require('path');
 const { Pool } = require('pg');
-const pool = require('./dbPool'); // tu configuración del pool de PostgreSQL
-const router = express.Router();
+const jwt = require('jsonwebtoken');
 require('dotenv').config();
 
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-// Middleware para leer formularios y JSON
-app.use(express.urlencoded({ extended: true }));
-app.use(express.json());
-
-// Conexión a PostgreSQL
+// Configura tu conexión a PostgreSQL con un solo pool
 const pool = new Pool({
   connectionString: process.env.DATABASE_URL,
-  ssl: {
-    rejectUnauthorized: false
-  }
+  ssl: { rejectUnauthorized: false } // Solo si usas base de datos remota con SSL
 });
 
-// Ruta para crear tabla usuarios
+// Middleware para parsear body en JSON y urlencoded
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
+
+// Crear tabla usuarios (ejecuta solo una vez, después puedes comentar)
 app.get('/crear-tabla-usuarios', async (req, res) => {
   try {
     await pool.query(`
@@ -42,6 +40,31 @@ app.get('/crear-tabla-usuarios', async (req, res) => {
   }
 });
 
+// Crear tabla negocios (ejecuta solo una vez, después puedes comentar)
+app.get('/crear-tabla-negocios', async (req, res) => {
+  try {
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS negocios (
+        id SERIAL PRIMARY KEY,
+        user_id INTEGER NOT NULL REFERENCES usuarios(id) ON DELETE CASCADE,
+        tipo_negocio INTEGER NOT NULL CHECK (tipo_negocio IN (1, 2, 3)), -- 1: Hotel, 2: Restaurante, 3: Punto de interés
+        correo VARCHAR(150) UNIQUE NOT NULL,
+        contraseña TEXT NOT NULL,
+        nombre VARCHAR(150),
+        descripcion TEXT,
+        direccion TEXT,
+        mapa_url TEXT,
+        creado_en TIMESTAMP DEFAULT NOW()
+      );
+    `);
+    res.send('Tabla negocios creada correctamente.');
+  } catch (error) {
+    console.error(error);
+    res.status(500).send('Error al crear la tabla de negocios');
+  }
+});
+
+// Registro de usuario
 app.post('/register', async (req, res) => {
   const { nombre, apellido, telefono, correo, sexo, contraseña } = req.body;
 
@@ -50,12 +73,13 @@ app.post('/register', async (req, res) => {
   }
 
   try {
-    // Aquí validación para evitar correos repetidos si quieres
+    // Verificar si correo ya existe
     const existing = await pool.query('SELECT * FROM usuarios WHERE correo = $1', [correo]);
     if (existing.rows.length > 0) {
       return res.status(400).send('El correo ya está registrado.');
     }
 
+    // Insertar usuario
     await pool.query(
       'INSERT INTO usuarios (nombre, apellido, telefono, correo, sexo, contraseña) VALUES ($1, $2, $3, $4, $5, $6)',
       [nombre, apellido, telefono, correo, sexo, contraseña]
@@ -68,47 +92,9 @@ app.post('/register', async (req, res) => {
   }
 });
 
-
-// Ruta para listar usuarios
-app.get('/usuarios', async (req, res) => {
-  try {
-    const result = await pool.query('SELECT * FROM usuarios');
-    res.json(result.rows);
-  } catch (err) {
-    console.error(err);
-    res.status(500).send('Error al obtener usuarios');
-  }
-});
-
-
-// Ruta de prueba para verificar conexión con la base de datos
-app.get('/db-test', async (req, res) => {
-  try {
-    const result = await pool.query('SELECT NOW()');
-    res.send(`La hora actual en la base de datos es: ${result.rows[0].now}`);
-  } catch (err) {
-    console.error(err);
-    res.status(500).send('Error al conectar a la base de datos');
-  }
-});
-
-// Servir archivos estáticos desde la raíz
-app.use(express.static(__dirname));
-
-// Ruta comodín para redirigir todo a index.html
-app.get('*', (req, res) => {
-  res.sendFile(path.join(__dirname, 'index.html'));
-});
-
-app.listen(PORT, () => {
-  console.log(`Servidor corriendo en http://localhost:${PORT}`);
-});
-
-app.use(express.json()); // Importante para parsear JSON en body
-
+// Login: verifica usuario y genera JWT
 app.post('/login', async (req, res) => {
   const { correo, contraseña } = req.body;
-
   if (!correo || !contraseña) {
     return res.status(400).send('Completa todos los campos.');
   }
@@ -126,29 +112,17 @@ app.post('/login', async (req, res) => {
       return res.status(400).send('Contraseña incorrecta');
     }
 
-    res.send('Inicio de sesión correcto');
+    // Crear token con id y correo
+    const token = jwt.sign(
+      { id: usuario.id, correo: usuario.correo },
+      process.env.JWT_SECRET,
+      { expiresIn: '2h' }
+    );
+
+    res.json({ mensaje: 'Inicio de sesión correcto', token });
   } catch (error) {
     console.error(error);
     res.status(500).send('Error del servidor');
-  }
-});
-
-// Ruta para crear la tabla negocios
-app.get('/crear-tabla-negocios', async (req, res) => {
-  try {
-    await pool.query(`
-      CREATE TABLE IF NOT EXISTS negocios (
-        id SERIAL PRIMARY KEY,
-        tipo_negocio INTEGER NOT NULL CHECK (tipo_negocio IN (1, 2, 3)), -- 1: Hoteles, 2: Restaurantes, 3: Puntos de interés
-        correo VARCHAR(150) UNIQUE NOT NULL,
-        contraseña TEXT NOT NULL,
-        creado_en TIMESTAMP DEFAULT NOW()
-      );
-    `);
-    res.send('Tabla negocios creada correctamente.');
-  } catch (error) {
-    console.error(error);
-    res.status(500).send('Error al crear la tabla de negocios');
   }
 });
 
@@ -161,28 +135,28 @@ function authenticateToken(req, res, next) {
 
   jwt.verify(token, process.env.JWT_SECRET, (err, user) => {
     if (err) return res.status(403).json({ error: 'Token inválido' });
-
-    req.user = user; // user contiene los datos del payload del token
+    req.user = user; // user contiene id y correo
     next();
   });
 }
 
-// Ruta para obtener negocio por ID
-router.get('/negocio/:id', authenticateToken, async (req, res) => {
+// Obtener datos de negocio por ID solo si pertenece al usuario autenticado
+app.get('/negocio/:id', authenticateToken, async (req, res) => {
   const negocioId = parseInt(req.params.id);
-  const userId = req.user.id; // Id del usuario almacenado en el token
+  const userId = req.user.id;
 
   try {
-    // Verifica que el negocio consultado pertenece al usuario autenticado
-    // Supongamos que en tu tabla negocios tienes un campo "user_id" que indica el dueño
-    const query = 'SELECT id, tipo_negocio, correo, nombre, descripcion, direccion, mapa_url FROM negocios WHERE id = $1 AND user_id = $2';
+    const query = `
+      SELECT id, tipo_negocio, correo, nombre, descripcion, direccion, mapa_url 
+      FROM negocios 
+      WHERE id = $1 AND user_id = $2
+    `;
     const { rows } = await pool.query(query, [negocioId, userId]);
 
     if (rows.length === 0) {
       return res.status(404).json({ error: 'Negocio no encontrado o no autorizado' });
     }
 
-    // Retornamos los datos del negocio (excluyendo contraseña y datos sensibles)
     res.json(rows[0]);
   } catch (error) {
     console.error(error);
@@ -190,7 +164,43 @@ router.get('/negocio/:id', authenticateToken, async (req, res) => {
   }
 });
 
-module.exports = router;
+// Modificar datos de negocio solo si pertenece al usuario autenticado
+app.put('/negocio/:id', authenticateToken, async (req, res) => {
+  const negocioId = parseInt(req.params.id);
+  const userId = req.user.id;
+  const { nombre, descripcion, direccion, mapa_url } = req.body;
+
+  try {
+    // Validar que negocio pertenece al usuario
+    const check = await pool.query('SELECT * FROM negocios WHERE id = $1 AND user_id = $2', [negocioId, userId]);
+    if (check.rows.length === 0) {
+      return res.status(404).json({ error: 'Negocio no encontrado o no autorizado' });
+    }
+
+    // Actualizar campos
+    await pool.query(`
+      UPDATE negocios SET nombre = $1, descripcion = $2, direccion = $3, mapa_url = $4 WHERE id = $5
+    `, [nombre, descripcion, direccion, mapa_url, negocioId]);
+
+    res.json({ mensaje: 'Negocio actualizado correctamente' });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: 'Error al actualizar el negocio' });
+  }
+});
+
+// Servir archivos estáticos (tu frontend)
+app.use(express.static(path.join(__dirname, 'public')));
+
+// Ruta comodín para servir index.html (SPA)
+app.get('*', (req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'index.html'));
+});
+
+app.listen(PORT, () => {
+  console.log(`Servidor corriendo en http://localhost:${PORT}`);
+});
+
 
 
 
