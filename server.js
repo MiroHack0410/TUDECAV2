@@ -1,21 +1,20 @@
-// server.js
 const express = require('express');
 const path = require('path');
 const { Pool } = require('pg');
 const jwt = require('jsonwebtoken');
-const bcrypt = require('bcrypt'); // Agregado bcrypt
+const bcrypt = require('bcrypt');
 require('dotenv').config();
 
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-// Configura tu conexión a PostgreSQL con un solo pool
+// Configura conexión a PostgreSQL con pool
 const pool = new Pool({
   connectionString: process.env.DATABASE_URL,
   ssl: { rejectUnauthorized: false } // Solo si usas base de datos remota con SSL
 });
 
-// Middleware para parsear body en JSON y urlencoded
+// Middleware para parsear JSON y urlencoded
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
@@ -56,16 +55,13 @@ app.post('/register', async (req, res) => {
   }
 
   try {
-    // Verificar si correo ya existe
     const existing = await pool.query('SELECT * FROM usuarios WHERE correo = $1', [correo]);
     if (existing.rows.length > 0) {
       return res.status(400).send('El correo ya está registrado.');
     }
 
-    // Hashear contraseña antes de guardar
     const hash = await bcrypt.hash(contraseña, 10);
 
-    // Insertar usuario con contraseña hasheada
     await pool.query(
       'INSERT INTO usuarios (nombre, apellido, telefono, correo, sexo, contraseña) VALUES ($1, $2, $3, $4, $5, $6)',
       [nombre, apellido, telefono, correo, sexo, hash]
@@ -78,7 +74,7 @@ app.post('/register', async (req, res) => {
   }
 });
 
-// Login: verifica usuario y genera JWT
+// Login
 app.post('/login', async (req, res) => {
   const { correo, contraseña } = req.body;
   if (!correo || !contraseña) {
@@ -94,13 +90,11 @@ app.post('/login', async (req, res) => {
 
     const usuario = result.rows[0];
 
-    // Comparar contraseña con hash
     const match = await bcrypt.compare(contraseña, usuario.contraseña);
     if (!match) {
       return res.status(400).send('Contraseña incorrecta');
     }
 
-    // Crear token con id y correo
     const token = jwt.sign(
       { id: usuario.id, correo: usuario.correo },
       process.env.JWT_SECRET,
@@ -123,12 +117,12 @@ function authenticateToken(req, res, next) {
 
   jwt.verify(token, process.env.JWT_SECRET, (err, user) => {
     if (err) return res.status(403).json({ error: 'Token inválido' });
-    req.user = user; // user contiene id y correo
+    req.user = user;
     next();
   });
 }
 
-// Obtener datos de negocio por ID solo si pertenece al usuario autenticado
+// Obtener negocio por ID, solo si es del usuario autenticado
 app.get('/negocio/:id', authenticateToken, async (req, res) => {
   const negocioId = parseInt(req.params.id);
   const userId = req.user.id;
@@ -152,20 +146,18 @@ app.get('/negocio/:id', authenticateToken, async (req, res) => {
   }
 });
 
-// Modificar datos de negocio solo si pertenece al usuario autenticado
+// Modificar negocio solo si es del usuario autenticado
 app.put('/negocio/:id', authenticateToken, async (req, res) => {
   const negocioId = parseInt(req.params.id);
   const userId = req.user.id;
   const { nombre, descripcion, direccion, mapa_url } = req.body;
 
   try {
-    // Validar que negocio pertenece al usuario
     const check = await pool.query('SELECT * FROM negocios WHERE id = $1 AND user_id = $2', [negocioId, userId]);
     if (check.rows.length === 0) {
       return res.status(404).json({ error: 'Negocio no encontrado o no autorizado' });
     }
 
-    // Actualizar campos
     await pool.query(`
       UPDATE negocios SET nombre = $1, descripcion = $2, direccion = $3, mapa_url = $4 WHERE id = $5
     `, [nombre, descripcion, direccion, mapa_url, negocioId]);
@@ -177,8 +169,12 @@ app.put('/negocio/:id', authenticateToken, async (req, res) => {
   }
 });
 
-app.use(express.static(__dirname)); // Servir archivos estáticos desde la raíz
+app.use(express.static(__dirname));
 
 app.get('*', (req, res) => {
-  res.sendFile(path.join(__dirname, 'index.html')); // Cargar index.html desde raíz
+  res.sendFile(path.join(__dirname, 'index.html'));
+});
+
+app.listen(PORT, () => {
+  console.log(`Servidor corriendo en http://localhost:${PORT}`);
 });
