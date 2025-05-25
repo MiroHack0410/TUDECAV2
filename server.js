@@ -21,38 +21,6 @@ app.use(express.urlencoded({ extended: true }));
 // RUTAS PARA ADMINISTRAR DB
 // ==========================
 
-// Crear tabla administrador
-app.get('/crear-tabla-admin', async (req, res) => {
-  try {
-    await pool.query(`
-      CREATE TABLE IF NOT EXISTS admin (
-        id SERIAL PRIMARY KEY,
-        nombre VARCHAR(100) NOT NULL,
-        correo VARCHAR(150) UNIQUE NOT NULL,
-        contraseña TEXT NOT NULL
-      );
-    `);
-    res.send('Tabla admin creada correctamente.');
-  } catch (error) {
-    console.error(error);
-    res.status(500).send('Error al crear la tabla admin');
-  }
-});
-
-app.get('/insertar-admin', async (req, res) => {
-  try {
-    await pool.query(`
-      INSERT INTO admin (nombre, correo, contraseña)
-      VALUES ($1, $2, $3)
-    `, ['emir', 'emirbaxin@gmai.com', 'emirb0410']);
-
-    res.send('Administrador insertado correctamente.');
-  } catch (error) {
-    console.error(error);
-    res.status(500).send('Error al insertar el administrador');
-  }
-});
-
 // =====================
 // ARCHIVOS ESTÁTICOS
 // =====================
