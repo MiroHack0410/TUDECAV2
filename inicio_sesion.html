@@ -141,7 +141,7 @@
     // Detectar si el usuario está logueado
     async function checkLogin() {
       try {
-        const res = await fetch('/usuario');
+        const res = await fetch('/me');
         if (res.ok) {
           const data = await res.json();
           if (data.loggedIn) {
