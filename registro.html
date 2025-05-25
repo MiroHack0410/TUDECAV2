@@ -183,12 +183,47 @@
         </div>
 
         <label for="contraseña">Contraseña:</label>
-        <input type="password" id="contraseña" name="contraseña" required>
+        <input type="password" id="password" name="password" required>
 
         <button type="submit" class="signup-btn-link">REGISTRARME</button>
       </form>
     </section>
   </main>
+  <div id="registroMessage" style="color:red; margin-top:10px;"></div>
+
+<script>
+  const form = document.getElementById('registroForm');
+  const messageDiv = document.getElementById('registroMessage');
+
+  form.addEventListener('submit', async (e) => {
+    e.preventDefault(); // evitar recarga
+
+    const formData = new FormData(form);
+    const data = Object.fromEntries(formData.entries());
+
+    try {
+      const res = await fetch('/registro', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data),
+      });
+
+      const result = await res.json();
+
+      if (result.success) {
+        messageDiv.style.color = 'green';
+        messageDiv.textContent = result.message;
+        form.reset();
+      } else {
+        messageDiv.style.color = 'red';
+        messageDiv.textContent = result.message || 'Error desconocido';
+      }
+    } catch (error) {
+      messageDiv.style.color = 'red';
+      messageDiv.textContent = 'Error de conexión';
+    }
+  });
+</script>
 </body>
 </html>
 
