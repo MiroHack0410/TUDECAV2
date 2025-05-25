@@ -200,32 +200,34 @@
           return;
         }
 
-        try {
-          const res = await fetch('https://tudecav2.onrender.com/auth/login', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(data),
-          });
+try {
+  const res = await fetch('https://tudecav2.onrender.com/auth/login', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(data),
+  });
 
-          const responseData = await res.json();
+  if (!res.ok) {
+    const errorData = await res.json();
+    errorDiv.textContent = errorData.message || `Error ${res.status}`;
+    return;
+  }
 
-          if (!res.ok) {
-            errorDiv.textContent = responseData.message || 'Correo o contraseña incorrectos.';
-            return;
-          }
+  const responseData = await res.json();
 
-          if (responseData.tipo_negocio === 'hotel') {
-            localStorage.setItem('token', responseData.token);
-            localStorage.setItem('negocioId', responseData.negocioId);
+  if (responseData.tipo_negocio === 'hotel') {
+    localStorage.setItem('token', responseData.token);
+    localStorage.setItem('negocioId', responseData.negocioId);
 
-            window.location.href = 'modifica_hoteles.html';
-          } else {
-            errorDiv.textContent = 'Acceso denegado. Solo hoteles pueden modificar.';
-          }
-        } catch (error) {
-          errorDiv.textContent = 'Error en el servidor. Intenta más tarde.';
-          console.error(error);
-        }
+    window.location.href = 'modifica_hoteles.html';
+  } else {
+    errorDiv.textContent = 'Acceso denegado. Solo hoteles pueden modificar.';
+  }
+} catch (error) {
+  errorDiv.textContent = 'Error en el servidor. Intenta más tarde.';
+  console.error(error);
+}
+
       });
     </script>
 </body>
