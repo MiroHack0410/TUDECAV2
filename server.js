@@ -58,6 +58,39 @@ app.get('/crear-tabla-negocios', async (req, res) => {
   }
 });
 
+app.get('/insertar-hoteles', async (req, res) => {
+  const hoteles = [
+    { correo: 'lafinca@catemaco.com', contraseña: 'lafinca123' },
+    { correo: 'playacristal@catemaco.com', contraseña: 'cristal123' },
+    { correo: 'lasbrisas@catemaco.com', contraseña: 'brisas123' },
+    { correo: 'koniapan@catemaco.com', contraseña: 'koniapan123' },
+    { correo: 'delangel@catemaco.com', contraseña: 'angel123' },
+    { correo: 'dellago@catemaco.com', contraseña: 'lago123' },
+    { correo: 'losarcos@catemaco.com', contraseña: 'arcos123' },
+    { correo: 'pescador@catemaco.com', contraseña: 'pescador123' },
+    { correo: 'irefel@catemaco.com', contraseña: 'irefel123' },
+  ];
+
+  try {
+    for (const hotel of hoteles) {
+      const hash = await bcrypt.hash(hotel.contraseña, 10);
+      await pool.query(
+        'INSERT INTO negocios (correo, contraseña, tipo_negocio) VALUES ($1, $2, 1) ON CONFLICT (correo) DO NOTHING',
+        [hotel.correo, hash]
+      );
+    }
+    res.send('Hoteles insertados correctamente.');
+  } catch (error) {
+    console.error(error);
+    res.status(500).send('Error al insertar hoteles.');
+  }
+});
+
+const PORT = process.env.PORT || 3000;
+app.listen(PORT, () => {
+  console.log(`Servidor escuchando en puerto ${PORT}`);
+});
+
 
 // Registro de usuario
 app.post('/register', async (req, res) => {
