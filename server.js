@@ -7,7 +7,7 @@ const bcrypt = require('bcrypt'); // Agregado bcrypt
 require('dotenv').config();
 
 const app = express();
-const PORT = process.env.PORT || 3000;
+const PORT = process.env.PORT || 2000;
 
 // Configura tu conexión a PostgreSQL con un solo pool
 const pool = new Pool({
