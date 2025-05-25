@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-    <meta charset="UTF-8">
+    <meta charset="UTF-8" />
     <title>TUDECA - Inicio de Sesión</title>
     <style>
         body {
@@ -58,16 +58,6 @@
             font-size: 24px;
             color: black;
             font-weight: bold;
-        }
-
-        .user-icon {
-            width: 32px;
-            height: 32px;
-            background-color: #2d4729;
-            border-radius: 50%;
-            background-image: url('https://cdn-icons-png.flaticon.com/512/1077/1077012.png');
-            background-size: cover;
-            background-position: center;
         }
 
         main {
@@ -144,6 +134,12 @@
         .signup-btn-link:hover {
             background-color: #4a7946;
         }
+
+        /* Estilo para mensaje de error */
+        #error-message {
+            color: red;
+            margin-top: 10px;
+        }
     </style>
 </head>
 <body>
@@ -165,12 +161,12 @@
     <main>
         <div class="login-box">
             <h3>Iniciar Sesión</h3>
-            <form>
-                <label for="username">Correo:</label>
-                <input type="text" id="correo" name="correo" value="johndoe" required>
+            <form id="loginForm">
+                <label for="correo">Correo:</label>
+                <input type="text" id="correo" name="correo" required>
 
-                <label for="password">Contraseña:</label>
-                <input type="password" id="contraseña" name="contraseña" value="password" required>
+                <label for="contraseña">Contraseña:</label>
+                <input type="password" id="contraseña" name="contraseña" required>
 
                 <button type="submit" class="signin-btn">Iniciar Sesión</button>
 
@@ -182,55 +178,15 @@
                     <p>Crear Usuario</p>
                     <a href="registro.html" class="signup-btn-link">Registrarse</a>
                 </div>
+
+                <div id="error-message"></div>
             </form>
         </div>
     </main>
+
     <script>
-  const loginForm = document.querySelector('form');
-
-  loginForm.addEventListener('submit', async (e) => {
-    e.preventDefault();
-
-    const formData = new FormData(loginForm);
-    const data = Object.fromEntries(formData.entries());
-
-    if (!data.correo || !data.contraseña) {
-      alert('Por favor completa todos los campos.');
-      return;
-    }
-
-    try {
-      const res = await fetch('/login', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(data),
-      });
-
-      const message = await res.text();
-
-      alert(message);
-
-      if (res.ok) {
-        // Mensaje para inicio de sesión correcto
-        alert('¡Inicio de sesión exitoso!');
-
-        // Aquí puedes redirigir a una página privada
-        // window.location.href = '/dashboard.html';
-
-        loginForm.reset();
-      }
-    } catch (error) {
-      alert('Error en el servidor. Intenta más tarde.');
-    }
-  });
-</script>
-
-<script>
-      const loginForm = document.querySelector('form');
-      const errorDiv = document.createElement('div');
-      errorDiv.style.color = 'red';
-      errorDiv.style.marginTop = '10px';
-      loginForm.appendChild(errorDiv);
+      const loginForm = document.getElementById('loginForm');
+      const errorDiv = document.getElementById('error-message');
 
       loginForm.addEventListener('submit', async (e) => {
         e.preventDefault();
@@ -271,6 +227,10 @@
           console.error(error);
         }
       });
+    </script>
+</body>
+</html>
+
     </script>
 
 </body>
