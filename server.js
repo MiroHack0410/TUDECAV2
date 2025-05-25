@@ -18,46 +18,6 @@ const pool = new Pool({
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-// Crear tabla usuarios (ejecuta solo una vez, después puedes comentar)
-app.get('/crear-tabla-usuarios', async (req, res) => {
-  try {
-    await pool.query(`
-      CREATE TABLE IF NOT EXISTS usuarios (
-        id SERIAL PRIMARY KEY,
-        nombre VARCHAR(100) NOT NULL,
-        apellido VARCHAR(100),
-        telefono VARCHAR(20),
-        correo VARCHAR(150) UNIQUE NOT NULL,
-        sexo CHAR(1),
-        contraseña TEXT NOT NULL,
-        creado_en TIMESTAMP DEFAULT NOW()
-      );
-    `);
-    res.send('Tabla usuarios creada correctamente.');
-  } catch (error) {
-    console.error(error);
-    res.status(500).send('Error al crear la tabla de usuarios');
-  }
-});
-
-// Crear tabla negocios (ejecuta solo una vez, después puedes comentar)
-app.get('/crear-tabla-negocios', async (req, res) => {
-  try {
-    await pool.query(`
-      CREATE TABLE IF NOT EXISTS negocios (
-        id SERIAL PRIMARY KEY,
-        correo VARCHAR(150) UNIQUE NOT NULL,
-        contraseña TEXT NOT NULL,
-        tipo_negocio INTEGER NOT NULL CHECK (tipo_negocio IN (1, 2, 3)) -- 1: Hotel, 2: Restaurante, 3: Punto de interés
-      );
-    `);
-    res.send('Tabla negocios creada correctamente.');
-  } catch (error) {
-    console.error(error);
-    res.status(500).send('Error al crear la tabla de negocios');
-  }
-});
-
 app.get('/insertar-hoteles', async (req, res) => {
   const hoteles = [
     { correo: 'lafinca@catemaco.com', contraseña: 'lafinca123' },
