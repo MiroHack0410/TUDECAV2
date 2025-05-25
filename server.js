@@ -70,6 +70,9 @@ app.post('/crear-tabla-usuariosv2', async (req, res) => {
   }
 })();
 
+// =====================
+// CREAR TABLAS LUGARES
+// =====================
 (async () => {
   try {
     await pool.query(`
@@ -110,7 +113,6 @@ app.post('/crear-tabla-usuariosv2', async (req, res) => {
     console.error('❌ Error al crear tablas:', err);
   }
 })();
-
 
 // =====================
 // REGISTRO DE TURISTA
@@ -200,6 +202,86 @@ app.get('/me', (req, res) => {
 app.post('/logout', (req, res) => {
   res.clearCookie('token');
   res.send('Sesión cerrada');
+});
+
+// =====================
+// CRUD PARA HOTELES, RESTAURANTES Y PUNTOS DE INTERÉS
+// =====================
+
+function validarTipoLugar(req, res, next) {
+  const { tipo } = req.params;
+  if (!['hoteles', 'restaurantes', 'puntos_interes'].includes(tipo)) {
+    return res.status(400).send('Tipo inválido');
+  }
+  next();
+}
+
+// Obtener todos
+app.get('/api/:tipo', validarTipoLugar, async (req, res) => {
+  const { tipo } = req.params;
+  try {
+    const result = await pool.query(`SELECT * FROM ${tipo} ORDER BY id DESC`);
+    res.json(result.rows);
+  } catch (error) {
+    console.error('Error al obtener lista:', error);
+    res.status(500).send('Error al obtener datos');
+  }
+});
+
+// Insertar nuevo
+app.post('/api/:tipo', validarTipoLugar, async (req, res) => {
+  const { tipo } = req.params;
+  const { nombre, estrellas, descripcion, direccion, iframe_mapa } = req.body;
+
+  if (!nombre || !estrellas || !descripcion || !direccion || !iframe_mapa) {
+    return res.status(400).send('Faltan campos obligatorios');
+  }
+
+  try {
+    await pool.query(`
+      INSERT INTO ${tipo} (nombre, estrellas, descripcion, direccion, iframe_mapa)
+      VALUES ($1, $2, $3, $4, $5)
+    `, [nombre, estrellas, descripcion, direccion, iframe_mapa]);
+    res.send('Insertado correctamente');
+  } catch (error) {
+    console.error('Error al insertar:', error);
+    res.status(500).send('Error al insertar');
+  }
+});
+
+// Eliminar por id
+app.delete('/api/:tipo/:id', validarTipoLugar, async (req, res) => {
+  const { tipo, id } = req.params;
+
+  try {
+    await pool.query(`DELETE FROM ${tipo} WHERE id = $1`, [id]);
+    res.send('Eliminado correctamente');
+  } catch (error) {
+    console.error('Error al eliminar:', error);
+    res.status(500).send('Error al eliminar');
+  }
+});
+
+// Actualizar por id
+app.put('/api/:tipo/:id', validarTipoLugar, async (req, res) => {
+  const { tipo, id } = req.params;
+  const { nombre, estrellas, descripcion, direccion, iframe_mapa } = req.body;
+
+  if (!nombre || !estrellas || !descripcion || !direccion || !iframe_mapa) {
+    return res.status(400).send('Faltan campos obligatorios');
+  }
+
+  try {
+    await pool.query(`
+      UPDATE ${tipo}
+      SET nombre = $1, estrellas = $2, descripcion = $3, direccion = $4, iframe_mapa = $5
+      WHERE id = $6
+    `, [nombre, estrellas, descripcion, direccion, iframe_mapa, id]);
+    res.send('Actualizado correctamente');
+  } catch (error) {
+    console.error('Error al actualizar:', error);
+    res.status(500).send('Error al actualizar');
+  }
 });
 
 // =====================
