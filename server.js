@@ -152,6 +152,52 @@ app.get('/me', (req, res) => {
   }
 });
 
+// Crear tablas de hoteles, restaurantes y puntos de interés
+app.post('/crear-tablas-iniciales', async (req, res) => {
+  try {
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS hoteles (
+        id SERIAL PRIMARY KEY,
+        nombre TEXT NOT NULL,
+        descripcion TEXT,
+        direccion TEXT,
+        estrellas INTEGER CHECK (estrellas BETWEEN 0 AND 5),
+        calificacion DECIMAL(2,1),
+        resenas INTEGER,
+        url_mapa TEXT,
+        imagen TEXT
+      );
+      CREATE TABLE IF NOT EXISTS restaurantes (
+        id SERIAL PRIMARY KEY,
+        nombre TEXT NOT NULL,
+        descripcion TEXT,
+        direccion TEXT,
+        estrellas INTEGER CHECK (estrellas BETWEEN 0 AND 5),
+        calificacion DECIMAL(2,1),
+        resenas INTEGER,
+        url_mapa TEXT,
+        imagen TEXT
+      );
+      CREATE TABLE IF NOT EXISTS puntos_interes (
+        id SERIAL PRIMARY KEY,
+        nombre TEXT NOT NULL,
+        descripcion TEXT,
+        direccion TEXT,
+        estrellas INTEGER CHECK (estrellas BETWEEN 0 AND 5),
+        calificacion DECIMAL(2,1),
+        resenas INTEGER,
+        url_mapa TEXT,
+        imagen TEXT
+      );
+    `);
+    res.send('✅ Tablas hoteles, restaurantes y puntos_interes creadas/verificadas');
+  } catch (error) {
+    console.error('❌ Error al crear tablas iniciales:', error);
+    res.status(500).send('Error al crear tablas');
+  }
+});
+
+
 // =====================
 // CERRAR SESIÓN (logout)
 // =====================
