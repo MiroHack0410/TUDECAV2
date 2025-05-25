@@ -1,6 +1,8 @@
 const express = require('express');
 const path = require('path');
 const { Pool } = require('pg');
+const pool = require('./dbPool'); // tu configuración del pool de PostgreSQL
+const router = express.Router();
 require('dotenv').config();
 
 const app = express();
@@ -149,6 +151,46 @@ app.get('/crear-tabla-negocios', async (req, res) => {
     res.status(500).send('Error al crear la tabla de negocios');
   }
 });
+
+// Middleware para validar token JWT
+function authenticateToken(req, res, next) {
+  const authHeader = req.headers['authorization'];
+  const token = authHeader && authHeader.split(' ')[1]; // Bearer TOKEN
+
+  if (!token) return res.status(401).json({ error: 'Token no proporcionado' });
+
+  jwt.verify(token, process.env.JWT_SECRET, (err, user) => {
+    if (err) return res.status(403).json({ error: 'Token inválido' });
+
+    req.user = user; // user contiene los datos del payload del token
+    next();
+  });
+}
+
+// Ruta para obtener negocio por ID
+router.get('/negocio/:id', authenticateToken, async (req, res) => {
+  const negocioId = parseInt(req.params.id);
+  const userId = req.user.id; // Id del usuario almacenado en el token
+
+  try {
+    // Verifica que el negocio consultado pertenece al usuario autenticado
+    // Supongamos que en tu tabla negocios tienes un campo "user_id" que indica el dueño
+    const query = 'SELECT id, tipo_negocio, correo, nombre, descripcion, direccion, mapa_url FROM negocios WHERE id = $1 AND user_id = $2';
+    const { rows } = await pool.query(query, [negocioId, userId]);
+
+    if (rows.length === 0) {
+      return res.status(404).json({ error: 'Negocio no encontrado o no autorizado' });
+    }
+
+    // Retornamos los datos del negocio (excluyendo contraseña y datos sensibles)
+    res.json(rows[0]);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: 'Error al obtener el negocio' });
+  }
+});
+
+module.exports = router;
 
 
 
