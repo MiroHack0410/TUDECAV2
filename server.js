@@ -18,19 +18,6 @@ const pool = new Pool({
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-app.get('/insertar-hoteles', async (req, res) => {
-  const hoteles = [
-    { correo: 'lafinca@catemaco.com', contraseña: 'lafinca123' },
-    { correo: 'playacristal@catemaco.com', contraseña: 'cristal123' },
-    { correo: 'lasbrisas@catemaco.com', contraseña: 'brisas123' },
-    { correo: 'koniapan@catemaco.com', contraseña: 'koniapan123' },
-    { correo: 'delangel@catemaco.com', contraseña: 'angel123' },
-    { correo: 'dellago@catemaco.com', contraseña: 'lago123' },
-    { correo: 'losarcos@catemaco.com', contraseña: 'arcos123' },
-    { correo: 'pescador@catemaco.com', contraseña: 'pescador123' },
-    { correo: 'irefel@catemaco.com', contraseña: 'irefel123' },
-  ];
-
   try {
     for (const hotel of hoteles) {
       const hash = await bcrypt.hash(hotel.contraseña, 10);
@@ -168,6 +155,17 @@ app.put('/negocio/:id', authenticateToken, async (req, res) => {
     res.status(500).json({ error: 'Error al actualizar el negocio' });
   }
 });
+
+app.get('/eliminar-tabla-negocios', async (req, res) => {
+  try {
+    await pool.query('DROP TABLE IF EXISTS negocios;');
+    res.send('Tabla negocios eliminada correctamente.');
+  } catch (error) {
+    console.error(error);
+    res.status(500).send('Error al eliminar la tabla de negocios');
+  }
+});
+
 
 app.use(express.static(__dirname));
 
