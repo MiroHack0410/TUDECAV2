@@ -150,63 +150,6 @@ app.get('/crear-tabla-negocios', async (req, res) => {
   }
 });
 
-// Ruta para crear las tablas detalladas de negocios
-app.get('/crear-tablas-negocios-detalle', async (req, res) => {
-  try {
-    // Crear tabla Hoteles
-    await pool.query(`
-      CREATE TABLE IF NOT EXISTS hoteles (
-        id SERIAL PRIMARY KEY,
-        nombre VARCHAR(100) NOT NULL,
-        descripcion TEXT,
-        direccion TEXT,
-        rating NUMERIC(2,1),
-        resenas INTEGER,
-        imagen_url TEXT,
-        mapa_url TEXT,
-        correo VARCHAR(150) NOT NULL REFERENCES negocios(correo) ON DELETE CASCADE
-      );
-    `);
-
-    // Crear tabla Restaurantes
-    await pool.query(`
-      CREATE TABLE IF NOT EXISTS restaurantes (
-        id SERIAL PRIMARY KEY,
-        nombre VARCHAR(100) NOT NULL,
-        descripcion TEXT,
-        direccion TEXT,
-        rating NUMERIC(2,1),
-        resenas INTEGER,
-        imagen_url TEXT,
-        mapa_url TEXT,
-        correo VARCHAR(150) NOT NULL REFERENCES negocios(correo) ON DELETE CASCADE
-      );
-    `);
-
-    // Crear tabla Puntos de Interés
-    await pool.query(`
-      CREATE TABLE IF NOT EXISTS puntos_interes (
-        id SERIAL PRIMARY KEY,
-        nombre VARCHAR(100) NOT NULL,
-        descripcion TEXT,
-        direccion TEXT,
-        rating NUMERIC(2,1),
-        resenas INTEGER,
-        imagen_url TEXT,
-        mapa_url TEXT,
-        correo VARCHAR(150) NOT NULL REFERENCES negocios(correo) ON DELETE CASCADE
-      );
-    `);
-
-    res.send('✅ Tablas de hoteles, restaurantes y puntos de interés creadas correctamente.');
-  } catch (error) {
-    console.error('Error al crear las tablas:', error);
-    res.status(500).send('❌ Error al crear las tablas de negocios detallados.');
-  }
-});
-
-
-
 
 
 
