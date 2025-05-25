@@ -177,17 +177,6 @@ app.put('/negocio/:id', authenticateToken, async (req, res) => {
   }
 });
 
-// Ruta temporal para eliminar la tabla 'negocios' (¡ejecuta solo una vez!)
-app.get('/eliminar-tabla-negocios', async (req, res) => {
-  try {
-    await pool.query('DROP TABLE IF EXISTS negocios CASCADE;');
-    res.send('Tabla negocios eliminada correctamente.');
-  } catch (error) {
-    console.error(error);
-    res.status(500).send('Error al eliminar la tabla de negocios');
-  }
-});
-
 app.use(express.static(__dirname)); // Servir archivos estáticos desde la raíz
 
 app.get('*', (req, res) => {
