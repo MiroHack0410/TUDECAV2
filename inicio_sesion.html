@@ -239,9 +239,16 @@
 
         const result = await res.json();
         if (res.ok) {
-          errorMsg.style.color = 'green';
-          errorMsg.textContent = result.mensaje;
-          checkLogin();
+        errorMsg.style.color = 'green';
+        errorMsg.textContent = result.mensaje;
+
+        if (result.rol === 1) {
+       // Redirigir admin a admin.html
+       window.location.href = '/admin.html';
+      } else {
+      checkLogin();
+        }
+      }
         } else {
           errorMsg.style.color = 'red';
           errorMsg.textContent = result.message || result || 'Error desconocido';
