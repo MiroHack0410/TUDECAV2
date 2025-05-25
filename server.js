@@ -46,15 +46,9 @@ app.get('/crear-tabla-negocios', async (req, res) => {
     await pool.query(`
       CREATE TABLE IF NOT EXISTS negocios (
         id SERIAL PRIMARY KEY,
-        user_id INTEGER NOT NULL REFERENCES usuarios(id) ON DELETE CASCADE,
-        tipo_negocio INTEGER NOT NULL CHECK (tipo_negocio IN (1, 2, 3)), -- 1: Hotel, 2: Restaurante, 3: Punto de interés
         correo VARCHAR(150) UNIQUE NOT NULL,
         contraseña TEXT NOT NULL,
-        nombre VARCHAR(150),
-        descripcion TEXT,
-        direccion TEXT,
-        mapa_url TEXT,
-        creado_en TIMESTAMP DEFAULT NOW()
+        tipo_negocio INTEGER NOT NULL CHECK (tipo_negocio IN (1, 2, 3)) -- 1: Hotel, 2: Restaurante, 3: Punto de interés
       );
     `);
     res.send('Tabla negocios creada correctamente.');
@@ -63,6 +57,7 @@ app.get('/crear-tabla-negocios', async (req, res) => {
     res.status(500).send('Error al crear la tabla de negocios');
   }
 });
+
 
 // Registro de usuario
 app.post('/register', async (req, res) => {
@@ -199,6 +194,18 @@ app.get('*', (req, res) => {
 app.listen(PORT, () => {
   console.log(`Servidor corriendo en http://localhost:${PORT}`);
 });
+
+// Ruta temporal para eliminar la tabla 'negocios' (¡ejecuta solo una vez!)
+app.get('/eliminar-tabla-negocios', async (req, res) => {
+  try {
+    await pool.query('DROP TABLE IF EXISTS negocios CASCADE;');
+    res.send('Tabla negocios eliminada correctamente.');
+  } catch (error) {
+    console.error(error);
+    res.status(500).send('Error al eliminar la tabla de negocios');
+  }
+});
+
 
 
 
