@@ -1,0 +1,248 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <title>Modificar Negocio - TUDECA</title>
+  <style>
+    body {
+      margin: 0;
+      font-family: Arial, sans-serif;
+      background-color: #e7f1df;
+    }
+
+    .navbar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background-color: #5a9352;
+      padding: 10px 20px;
+    }
+
+    .dropdown {
+      position: relative;
+    }
+
+    .dropbtn {
+      background-color: #4a7946;
+      color: white;
+      padding: 10px;
+      font-size: 16px;
+      border: none;
+      cursor: pointer;
+    }
+
+    .dropdown-content {
+      display: none;
+      position: absolute;
+      background-color: #2d4729;
+      box-shadow: 0px 8px 16px rgba(0,0,0,0.2);
+      z-index: 1;
+    }
+
+    .dropdown-content a {
+      color: white;
+      padding: 12px 16px;
+      display: block;
+      text-decoration: none;
+    }
+
+    .dropdown-content a:hover {
+      background-color: #3e6142;
+    }
+
+    .dropdown:hover .dropdown-content {
+      display: block;
+    }
+
+    .title {
+      font-size: 24px;
+      color: black;
+      font-weight: bold;
+    }
+
+    main {
+      max-width: 700px;
+      margin: 30px auto;
+      background: white;
+      padding: 20px 25px;
+      box-shadow: 0 0 5px rgba(0,0,0,0.1);
+      border-radius: 4px;
+    }
+
+    h3 {
+      border-bottom: 2px solid #5a9352;
+      padding-bottom: 10px;
+      margin-bottom: 20px;
+      color: #5a9352;
+    }
+
+    label {
+      display: block;
+      margin-top: 15px;
+      font-weight: bold;
+      color: #333;
+    }
+
+    input[type="text"],
+    textarea {
+      width: 100%;
+      padding: 8px;
+      margin-top: 5px;
+      border: 1px solid #ccc;
+      border-radius: 3px;
+      resize: vertical;
+      font-family: Arial, sans-serif;
+      font-size: 14px;
+    }
+
+    textarea {
+      height: 100px;
+    }
+
+    .save-btn {
+      background-color: #5a9352;
+      color: white;
+      border: none;
+      padding: 12px 30px;
+      cursor: pointer;
+      font-weight: bold;
+      margin-top: 20px;
+      border-radius: 3px;
+    }
+
+    .save-btn:hover {
+      background-color: #4a7946;
+    }
+
+    iframe {
+      margin-top: 20px;
+      width: 100%;
+      height: 300px;
+      border: none;
+      border-radius: 3px;
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="navbar">
+      <div class="dropdown">
+        <button class="dropbtn">Menú ▼</button>
+        <div class="dropdown-content">
+          <a href="Hotel.html">Hoteles</a>
+          <a href="restaurantes.html">Restaurantes</a>
+          <a href="puntos_interes.html">Atracciones</a>
+        </div>
+      </div>
+      <div class="title">TUDECA</div>
+      <div><a href="index.html" class="signup-btn-link" style="color: white; text-decoration: none;">Inicio</a></div>
+    </div>
+  </header>
+
+  <main>
+    <h3>Modificar Información del Negocio</h3>
+    <form id="modificar-form">
+      <label for="nombre">Nombre del negocio:</label>
+      <input type="text" id="nombre" name="nombre" required />
+
+      <label for="descripcion">Descripción:</label>
+      <textarea id="descripcion" name="descripcion" required></textarea>
+
+      <label for="direccion">Dirección:</label>
+      <input type="text" id="direccion" name="direccion" required />
+
+      <label for="mapa_url">URL del mapa embebido (iframe):</label>
+      <textarea id="mapa_url" name="mapa_url" placeholder="Pega aquí el código iframe o solo el src del iframe" required></textarea>
+
+      <button type="submit" class="save-btn">Guardar Cambios</button>
+    </form>
+
+    <div id="map-container" style="margin-top:20px;">
+      <!-- Aquí se insertará el iframe con el mapa -->
+    </div>
+  </main>
+
+  <script>
+    // Simulación: en una app real el token o id vendría de login / almacenamiento seguro
+    const negocioId = localStorage.getItem('negocioId'); // ejemplo, guarda el id en localStorage al hacer login
+    const token = localStorage.getItem('token'); // token JWT para autenticación en backend
+
+    // Si no hay negocioId o token, redirigir a login
+    if (!negocioId || !token) {
+      alert('No has iniciado sesión. Redirigiendo al login...');
+      window.location.href = 'login.html';
+    }
+
+    // Obtener datos del negocio para llenar formulario
+    async function cargarDatos() {
+      try {
+        const res = await fetch(`/negocio/${negocioId}`, {
+          headers: { 'Authorization': 'Bearer ' + token }
+        });
+        if (!res.ok) throw new Error('Error al obtener datos');
+
+        const negocio = await res.json();
+
+        document.getElementById('nombre').value = negocio.nombre || '';
+        document.getElementById('descripcion').value = negocio.descripcion || '';
+        document.getElementById('direccion').value = negocio.direccion || '';
+
+        // Si el campo es solo src del iframe, convertir a iframe completo
+        let mapaHtml = negocio.mapa_url || '';
+        if (!mapaHtml.startsWith('<iframe')) {
+          mapaHtml = `<iframe src="${mapaHtml}" allowfullscreen="" loading="lazy" referrerpolicy="no-referrer-when-downgrade"></iframe>`;
+        }
+
+        document.getElementById('mapa_url').value = mapaHtml;
+
+        // Mostrar iframe en la página
+        document.getElementById('map-container').innerHTML = mapaHtml;
+
+      } catch (error) {
+        alert('No se pudo cargar la información del negocio.');
+        console.error(error);
+      }
+    }
+
+    cargarDatos();
+
+    // Manejar envío del formulario para guardar cambios
+    document.getElementById('modificar-form').addEventListener('submit', async (e) => {
+      e.preventDefault();
+
+      const data = {
+        nombre: document.getElementById('nombre').value.trim(),
+        descripcion: document.getElementById('descripcion').value.trim(),
+        direccion: document.getElementById('direccion').value.trim(),
+        mapa_url: document.getElementById('mapa_url').value.trim()
+      };
+
+      try {
+        const res = await fetch(`/negocio/${negocioId}`, {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': 'Bearer ' + token
+          },
+          body: JSON.stringify(data)
+        });
+
+        if (!res.ok) throw new Error('Error al guardar cambios');
+
+        alert('Cambios guardados correctamente');
+
+        // Actualizar iframe con el mapa nuevo
+        let mapaHtml = data.mapa_url;
+        if (!mapaHtml.startsWith('<iframe')) {
+          mapaHtml = `<iframe src="${mapaHtml}" allowfullscreen="" loading="lazy" referrerpolicy="no-referrer-when-downgrade"></iframe>`;
+        }
+        document.getElementById('map-container').innerHTML = mapaHtml;
+
+      } catch (error) {
+        alert('Error al guardar los cambios. Intenta más tarde.');
+        console.error(error);
+      }
+    });
+  </script>
+</body>
+</html>
