@@ -183,57 +183,5 @@
             </form>
         </div>
     </main>
-
-    <script>
-      const loginForm = document.getElementById('loginForm');
-      const errorDiv = document.getElementById('error-message');
-
-      loginForm.addEventListener('submit', async (e) => {
-        e.preventDefault();
-        errorDiv.textContent = '';
-
-        const formData = new FormData(loginForm);
-        const data = Object.fromEntries(formData.entries());
-
-        if (!data.correo || !data.contraseña) {
-          errorDiv.textContent = 'Por favor completa todos los campos.';
-          return;
-        }
-
-try {
-  const res = await fetch('https://tudecav2.onrender.com/auth/login', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(data),
-  });
-
-  if (!res.ok) {
-    const errorData = await res.json();
-    errorDiv.textContent = errorData.message || `Error ${res.status}`;
-    return;
-  }
-
-  const responseData = await res.json();
-
-  if (responseData.tipo_negocio === 'hotel') {
-    localStorage.setItem('token', responseData.token);
-    localStorage.setItem('negocioId', responseData.negocioId);
-
-    window.location.href = 'modifica_hoteles.html';
-  } else {
-    errorDiv.textContent = 'Acceso denegado. Solo hoteles pueden modificar.';
-  }
-} catch (error) {
-  errorDiv.textContent = 'Error en el servidor. Intenta más tarde.';
-  console.error(error);
-}
-
-      });
-    </script>
-</body>
-</html>
-
-    </script>
-
 </body>
 </html>
