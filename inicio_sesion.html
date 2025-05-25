@@ -225,5 +225,54 @@
   });
 </script>
 
+        <script>
+      // Aquí va el script que te pasé antes
+      const loginForm = document.querySelector('form');
+      const errorDiv = document.createElement('div');
+      errorDiv.style.color = 'red';
+      errorDiv.style.marginTop = '10px';
+      loginForm.appendChild(errorDiv);
+
+      loginForm.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        errorDiv.textContent = '';
+
+        const formData = new FormData(loginForm);
+        const data = Object.fromEntries(formData.entries());
+
+        if (!data.correo || !data.contraseña) {
+          errorDiv.textContent = 'Por favor completa todos los campos.';
+          return;
+        }
+
+        try {
+          const res = await fetch('https://TU_DOMINIO_RENDER.onrender.com/auth/login', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(data),
+          });
+
+          const responseData = await res.json();
+
+          if (!res.ok) {
+            errorDiv.textContent = responseData.message || 'Correo o contraseña incorrectos.';
+            return;
+          }
+
+          if (responseData.tipo_negocio === 'hotel') {
+            localStorage.setItem('token', responseData.token);
+            localStorage.setItem('negocioId', responseData.negocioId);
+
+            window.location.href = 'modificar.html';
+          } else {
+            errorDiv.textContent = 'Acceso denegado. Solo hoteles pueden modificar.';
+          }
+        } catch (error) {
+          errorDiv.textContent = 'Error en el servidor. Intenta más tarde.';
+          console.error(error);
+        }
+      });
+    </script>
+
 </body>
 </html>
