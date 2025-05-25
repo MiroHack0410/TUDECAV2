@@ -183,5 +183,45 @@
             </form>
         </div>
     </main>
+    <div id="loginMessage" style="color:red; margin-top:10px;"></div>
+
+<script>
+  const loginForm = document.getElementById('loginForm');
+  const loginMessage = document.getElementById('loginMessage');
+
+  loginForm.addEventListener('submit', async (e) => {
+    e.preventDefault();
+
+    const formData = new FormData(loginForm);
+    const data = Object.fromEntries(formData.entries());
+
+    try {
+      const res = await fetch('/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data),
+      });
+
+      const result = await res.json();
+
+      if (result.success) {
+        loginMessage.style.color = 'green';
+        loginMessage.textContent = result.message;
+        // Redirigir según rol:
+        if (result.role === 1) {
+          window.location.href = '/admin.html';
+        } else if (result.role === 2) {
+          window.location.href = '/index.html';
+        }
+      } else {
+        loginMessage.style.color = 'red';
+        loginMessage.textContent = result.message || 'Error desconocido';
+      }
+    } catch (error) {
+      loginMessage.style.color = 'red';
+      loginMessage.textContent = 'Error de conexión';
+    }
+  });
+</script>
 </body>
 </html>
