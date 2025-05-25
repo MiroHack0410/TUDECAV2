@@ -50,6 +50,29 @@ app.get('/crear-tabla-negocios', async (req, res) => {
   }
 });
 
+// Crear tabla hoteles
+app.get('/crear-tabla-hoteles', async (req, res) => {
+  try {
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS hoteles (
+        id SERIAL PRIMARY KEY,
+        negocio_id INTEGER NOT NULL REFERENCES negocios(id) ON DELETE CASCADE,
+        nombre VARCHAR(150) NOT NULL,
+        estrellas DECIMAL(2,1) NOT NULL,
+        calificacion TEXT,
+        descripcion TEXT NOT NULL,
+        direccion TEXT NOT NULL,
+        url_mapa TEXT NOT NULL,
+        url_reserva TEXT NOT NULL
+      );
+    `);
+    res.send('Tabla hoteles creada correctamente.');
+  } catch (error) {
+    console.error(error);
+    res.status(500).send('Error al crear la tabla de hoteles');
+  }
+});
+
 // Insertar hoteles con contraseña hasheada
 app.get('/insertar-hoteles', async (req, res) => {
   const hoteles = [
