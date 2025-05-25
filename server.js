@@ -1,3 +1,6 @@
+// ---------------------------
+// ARCHIVO: server.js (Node.js)
+// ---------------------------
 const express = require('express');
 const path = require('path');
 const { Pool } = require('pg');
@@ -10,7 +13,6 @@ const app = express();
 const PORT = process.env.PORT || 3000;
 const JWT_SECRET = process.env.JWT_SECRET || 'tu_clave_secreta_aqui';
 
-// Conexión PostgreSQL
 const pool = new Pool({
   connectionString: process.env.DATABASE_URL,
   ssl: { rejectUnauthorized: false },
@@ -21,9 +23,6 @@ app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
 app.use(express.static(__dirname));
 
-// =====================
-// CREAR TABLA USUARIOSV2
-// =====================
 app.post('/crear-tabla-usuariosv2', async (req, res) => {
   try {
     await pool.query(`
@@ -45,7 +44,6 @@ app.post('/crear-tabla-usuariosv2', async (req, res) => {
   }
 });
 
-// Inserción admin automática (igual que antes)
 (async () => {
   const adminCorreo = 'admin@tudeca.com';
   const adminPasswordPlano = 'emirbb18';
@@ -70,9 +68,6 @@ app.post('/crear-tabla-usuariosv2', async (req, res) => {
   }
 })();
 
-// =====================
-// CREAR TABLAS LUGARES
-// =====================
 (async () => {
   try {
     await pool.query(`
@@ -114,20 +109,14 @@ app.post('/crear-tabla-usuariosv2', async (req, res) => {
   }
 })();
 
-// =====================
-// REGISTRO DE TURISTA
-// =====================
 app.post('/registro', async (req, res) => {
   const { nombre, apellido, telefono, correo, sexo, password } = req.body;
-
   try {
     const hashedPassword = await bcrypt.hash(password, 10);
-
     await pool.query(`
       INSERT INTO usuariosv2 (nombre, apellido, telefono, correo, sexo, password, rol)
       VALUES ($1, $2, $3, $4, $5, $6, 2)
     `, [nombre, apellido, telefono, correo, sexo, hashedPassword]);
-
     res.send('Usuario registrado exitosamente');
   } catch (err) {
     console.error('Error al registrar turista:', err);
@@ -135,41 +124,23 @@ app.post('/registro', async (req, res) => {
   }
 });
 
-// =====================
-// INICIO DE SESIÓN (login)
-// =====================
 app.post('/login', async (req, res) => {
   const { usuario, password } = req.body;
 
   try {
-    const result = await pool.query(
-      'SELECT * FROM usuariosv2 WHERE correo = $1',
-      [usuario]
-    );
-
-    if (result.rows.length === 0) {
-      return res.status(401).send('Usuario no encontrado');
-    }
+    const result = await pool.query('SELECT * FROM usuariosv2 WHERE correo = $1', [usuario]);
+    if (result.rows.length === 0) return res.status(401).send('Usuario no encontrado');
 
     const user = result.rows[0];
     const isMatch = await bcrypt.compare(password, user.password);
+    if (!isMatch) return res.status(401).send('Contraseña incorrecta');
 
-    if (!isMatch) {
-      return res.status(401).send('Contraseña incorrecta');
-    }
+    const token = jwt.sign({ id: user.id, correo: user.correo, nombre: user.nombre, rol: user.rol }, JWT_SECRET, { expiresIn: '2h' });
 
-    // Crear token JWT con datos básicos
-    const token = jwt.sign(
-      { id: user.id, correo: user.correo, nombre: user.nombre, rol: user.rol },
-      JWT_SECRET,
-      { expiresIn: '2h' }
-    );
-
-    // Guardar token en cookie httpOnly (más seguro)
     res.cookie('token', token, {
       httpOnly: true,
-      secure: process.env.NODE_ENV === 'production', // solo https en prod
-      maxAge: 2 * 60 * 60 * 1000, // 2 horas
+      secure: process.env.NODE_ENV === 'production',
+      maxAge: 2 * 60 * 60 * 1000,
       sameSite: 'lax'
     });
 
@@ -181,13 +152,9 @@ app.post('/login', async (req, res) => {
   }
 });
 
-// =====================
-// OBTENER DATOS DEL USUARIO LOGUEADO
-// =====================
 app.get('/me', (req, res) => {
   const token = req.cookies.token;
   if (!token) return res.status(401).send('No autenticado');
-
   try {
     const userData = jwt.verify(token, JWT_SECRET);
     res.json(userData);
@@ -196,17 +163,10 @@ app.get('/me', (req, res) => {
   }
 });
 
-// =====================
-// CERRAR SESIÓN (logout)
-// =====================
 app.post('/logout', (req, res) => {
   res.clearCookie('token');
   res.send('Sesión cerrada');
 });
-
-// =====================
-// CRUD PARA HOTELES, RESTAURANTES Y PUNTOS DE INTERÉS
-// =====================
 
 function validarTipoLugar(req, res, next) {
   const { tipo } = req.params;
@@ -216,7 +176,6 @@ function validarTipoLugar(req, res, next) {
   next();
 }
 
-// Obtener todos
 app.get('/api/:tipo', validarTipoLugar, async (req, res) => {
   const { tipo } = req.params;
   try {
@@ -228,7 +187,6 @@ app.get('/api/:tipo', validarTipoLugar, async (req, res) => {
   }
 });
 
-// Insertar nuevo
 app.post('/api/:tipo', validarTipoLugar, async (req, res) => {
   const { tipo } = req.params;
   const { nombre, estrellas, descripcion, direccion, iframe_mapa } = req.body;
@@ -249,10 +207,8 @@ app.post('/api/:tipo', validarTipoLugar, async (req, res) => {
   }
 });
 
-// Eliminar por id
 app.delete('/api/:tipo/:id', validarTipoLugar, async (req, res) => {
   const { tipo, id } = req.params;
-
   try {
     await pool.query(`DELETE FROM ${tipo} WHERE id = $1`, [id]);
     res.send('Eliminado correctamente');
@@ -262,7 +218,6 @@ app.delete('/api/:tipo/:id', validarTipoLugar, async (req, res) => {
   }
 });
 
-// Actualizar por id
 app.put('/api/:tipo/:id', validarTipoLugar, async (req, res) => {
   const { tipo, id } = req.params;
   const { nombre, estrellas, descripcion, direccion, iframe_mapa } = req.body;
@@ -284,13 +239,10 @@ app.put('/api/:tipo/:id', validarTipoLugar, async (req, res) => {
   }
 });
 
-// =====================
-// RUTA POR DEFECTO
-// =====================
 app.get('*', (req, res) => {
   res.sendFile(path.join(__dirname, 'index.html'));
 });
 
 app.listen(PORT, () => {
   console.log(`Servidor corriendo en http://localhost:${PORT}`);
-});
+})
