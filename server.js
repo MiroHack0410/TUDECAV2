@@ -17,7 +17,7 @@ const pool = new Pool({
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-// Ruta para eliminar la tabla negocios (usarla solo para reset)
+// Ruta para eliminar la tabla negocios (solo para reset)
 app.get('/eliminar-tabla-negocios', async (req, res) => {
   try {
     await pool.query('DROP TABLE IF EXISTS negocios;');
@@ -28,7 +28,7 @@ app.get('/eliminar-tabla-negocios', async (req, res) => {
   }
 });
 
-// Ruta para crear la tabla negocios
+// Ruta para crear la tabla negocios (si no existe)
 app.get('/crear-tabla-negocios', async (req, res) => {
   try {
     await pool.query(`
@@ -36,8 +36,7 @@ app.get('/crear-tabla-negocios', async (req, res) => {
         id SERIAL PRIMARY KEY,
         correo VARCHAR(150) UNIQUE NOT NULL,
         contraseña TEXT NOT NULL,
-        tipo_negocio INTEGER NOT NULL CHECK (tipo_negocio IN (1, 2, 3)),
-        user_id INTEGER -- opcional, si quieres relacionar con usuarios
+        tipo_negocio INTEGER NOT NULL CHECK (tipo_negocio IN (1, 2, 3))
       );
     `);
     res.send('Tabla negocios creada correctamente.');
@@ -47,7 +46,7 @@ app.get('/crear-tabla-negocios', async (req, res) => {
   }
 });
 
-// Ruta para insertar hoteles con contraseñas hasheadas
+// Ruta para insertar hoteles (ejemplo de datos iniciales)
 app.get('/insertar-hoteles', async (req, res) => {
   const hoteles = [
     { correo: 'lafinca@catemaco.com', contraseña: 'lafinca123' },
@@ -78,36 +77,52 @@ app.get('/insertar-hoteles', async (req, res) => {
 });
 
 // Login
-app.post('/login', async (req, res) => {
+app.post('/auth/login', async (req, res) => {
   const { correo, contraseña } = req.body;
+
   if (!correo || !contraseña) {
-    return res.status(400).send('Completa todos los campos.');
+    return res.status(400).json({ message: 'Completa todos los campos.' });
   }
 
   try {
     const result = await pool.query('SELECT * FROM negocios WHERE correo = $1', [correo]);
 
     if (result.rows.length === 0) {
-      return res.status(400).send('Correo incorrecto');
+      return res.status(401).json({ message: 'Correo incorrecto' });
     }
 
     const negocio = result.rows[0];
-
     const match = await bcrypt.compare(contraseña, negocio.contraseña);
+
     if (!match) {
-      return res.status(400).send('Contraseña incorrecta');
+      return res.status(401).json({ message: 'Contraseña incorrecta' });
     }
 
     const token = jwt.sign(
-      { id: negocio.id, correo: negocio.correo },
+      { id: negocio.id, correo: negocio.correo, tipo_negocio: negocio.tipo_negocio },
       process.env.JWT_SECRET,
       { expiresIn: '2h' }
     );
 
-    res.json({ mensaje: 'Inicio de sesión correcto', token });
+    let tipoNegocioTexto = '';
+    switch (negocio.tipo_negocio) {
+      case 1:
+        tipoNegocioTexto = 'hotel';
+        break;
+      case 2:
+        tipoNegocioTexto = 'restaurante';
+        break;
+      case 3:
+        tipoNegocioTexto = 'otro';
+        break;
+      default:
+        tipoNegocioTexto = 'otro';
+    }
+
+    res.json({ token, negocioId: negocio.id, tipo_negocio: tipoNegocioTexto });
   } catch (error) {
     console.error(error);
-    res.status(500).send('Error del servidor');
+    res.status(500).json({ message: 'Error en el servidor' });
   }
 });
 
@@ -130,10 +145,15 @@ app.get('/negocio/:id', authenticateToken, async (req, res) => {
   const negocioId = parseInt(req.params.id);
 
   try {
-    const { rows } = await pool.query('SELECT id, tipo_negocio, correo FROM negocios WHERE id = $1', [negocioId]);
+    const { rows } = await pool.query(
+      'SELECT id, correo, tipo_negocio FROM negocios WHERE id = $1',
+      [negocioId]
+    );
+
     if (rows.length === 0) {
       return res.status(404).json({ error: 'Negocio no encontrado' });
     }
+
     res.json(rows[0]);
   } catch (error) {
     console.error(error);
@@ -165,6 +185,7 @@ app.put('/negocio/:id', authenticateToken, async (req, res) => {
       updateFields.push(`contraseña = $${idx++}`);
       updateValues.push(hash);
     }
+
     if (updateFields.length === 0) {
       return res.status(400).json({ error: 'No hay datos para actualizar' });
     }
@@ -182,8 +203,10 @@ app.put('/negocio/:id', authenticateToken, async (req, res) => {
   }
 });
 
+// Servir archivos estáticos
 app.use(express.static(__dirname));
 
+// Ruta para manejar cualquier ruta no definida y enviar index.html
 app.get('*', (req, res) => {
   res.sendFile(path.join(__dirname, 'index.html'));
 });
