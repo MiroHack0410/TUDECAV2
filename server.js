@@ -203,6 +203,56 @@ app.put('/negocio/:id', authenticateToken, async (req, res) => {
   }
 });
 
+app.post('/auth/login', async (req, res) => {
+  const { correo, contraseña } = req.body;
+
+  if (!correo || !contraseña) {
+    return res.status(400).json({ message: 'Completa todos los campos.' });
+  }
+
+  try {
+    const result = await pool.query('SELECT * FROM negocios WHERE correo = $1', [correo]);
+
+    if (result.rows.length === 0) {
+      return res.status(401).json({ message: 'Correo incorrecto' });
+    }
+
+    const negocio = result.rows[0];
+    const match = await bcrypt.compare(contraseña, negocio.contraseña);
+
+    if (!match) {
+      return res.status(401).json({ message: 'Contraseña incorrecta' });
+    }
+
+    const token = jwt.sign(
+      { id: negocio.id, correo: negocio.correo, tipo_negocio: negocio.tipo_negocio },
+      process.env.JWT_SECRET,
+      { expiresIn: '2h' }
+    );
+
+    let tipoNegocioTexto = '';
+    switch (negocio.tipo_negocio) {
+      case 1:
+        tipoNegocioTexto = 'hotel';
+        break;
+      case 2:
+        tipoNegocioTexto = 'restaurante';
+        break;
+      case 3:
+        tipoNegocioTexto = 'otro';
+        break;
+      default:
+        tipoNegocioTexto = 'otro';
+    }
+
+    res.json({ token, negocioId: negocio.id, tipo_negocio: tipoNegocioTexto });
+  } catch (error) {
+    console.error('Error en /auth/login:', error); // <-- Agrega este log
+    res.status(500).json({ message: 'Error en el servidor' });
+  }
+});
+
+
 // Servir archivos estáticos
 app.use(express.static(__dirname));
 
