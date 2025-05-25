@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8" />
+<title>Hoteles TUDECA</title>
+<style>
+  body {
+    margin: 0; font-family: Arial, sans-serif; background-color: #e7f1df; padding: 20px;
+  }
+  .card {
+    background: white;
+    border-radius: 6px;
+    box-shadow: 0 0 5px rgba(0,0,0,0.15);
+    margin-bottom: 15px;
+    padding: 15px;
+    max-width: 600px;
+  }
+  .card h4 {
+    margin: 0 0 10px 0;
+  }
+  .stars {
+    color: #ffa500;
+    margin-bottom: 10px;
+  }
+  .desc, .direccion {
+    margin-bottom: 8px;
+    font-size: 14px;
+    color: #444;
+  }
+  .reserva-btn {
+    background-color: #3e6b3d;
+    padding: 8px 12px;
+    color: white;
+    text-decoration: none;
+    border-radius: 4px;
+    font-weight: bold;
+  }
+  .reserva-btn:hover {
+    background-color: #2f4f29;
+  }
+</style>
+</head>
+<body>
+
+<h2>Hoteles en TUDECA</h2>
+<div id="lista"></div>
+
+<script>
+  async function cargarHoteles() {
+    const res = await fetch('/api/hoteles');
+    const datos = await res.json();
+    const listaDiv = document.getElementById('lista');
+    listaDiv.innerHTML = '';
+
+    datos.forEach(item => {
+      const estrellas = '★'.repeat(item.estrellas) + '☆'.repeat(5 - item.estrellas);
+      const card = document.createElement('div');
+      card.className = 'card';
+      card.innerHTML = `
+        <h4>${item.nombre}</h4>
+        <div class="stars">${estrellas}</div>
+        <div class="desc">${item.descripcion}</div>
+        <div class="direccion"><strong>Dirección:</strong> ${item.direccion}</div>
+        <a href="#" class="reserva-btn">Reserva</a>
+      `;
+      listaDiv.appendChild(card);
+    });
+  }
+
+  cargarHoteles();
+</script>
+
+</body>
+</html>
