@@ -131,5 +131,25 @@ app.post('/login', async (req, res) => {
   }
 });
 
+// Ruta para crear la tabla negocios
+app.get('/crear-tabla-negocios', async (req, res) => {
+  try {
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS negocios (
+        id SERIAL PRIMARY KEY,
+        tipo_negocio INTEGER NOT NULL CHECK (tipo_negocio IN (1, 2, 3)), -- 1: Hoteles, 2: Restaurantes, 3: Puntos de interés
+        correo VARCHAR(150) UNIQUE NOT NULL,
+        contraseña TEXT NOT NULL,
+        creado_en TIMESTAMP DEFAULT NOW()
+      );
+    `);
+    res.send('Tabla negocios creada correctamente.');
+  } catch (error) {
+    console.error(error);
+    res.status(500).send('Error al crear la tabla de negocios');
+  }
+});
+
+
 
 
