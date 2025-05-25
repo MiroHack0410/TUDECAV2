@@ -53,6 +53,41 @@ app.get('/insertar-admin', async (req, res) => {
   }
 });
 
+// ==========================
+// RUTA DE LOGIN
+// ==========================
+app.post('/login', async (req, res) => {
+  const { username, password } = req.body;
+
+  try {
+    // Verificar si es administrador
+    const adminResult = await pool.query(
+      'SELECT * FROM admin WHERE correo = $1 AND contraseña = $2',
+      [username, password]
+    );
+
+    if (adminResult.rows.length > 0) {
+      return res.redirect('/modificar.html');
+    }
+
+    // Verificar si es usuario general
+    const userResult = await pool.query(
+      'SELECT * FROM usuarios WHERE correo = $1 AND contraseña = $2',
+      [username, password]
+    );
+
+    if (userResult.rows.length > 0) {
+      return res.redirect('/Hotel.html');
+    }
+
+    // No coincide con nadie
+    res.status(401).send('Correo o contraseña incorrectos');
+  } catch (error) {
+    console.error('Error en login:', error);
+    res.status(500).send('Error en el servidor');
+  }
+});
+
 
 // =====================
 // ARCHIVOS ESTÁTICOS
