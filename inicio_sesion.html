@@ -225,8 +225,7 @@
   });
 </script>
 
-        <script>
-      // Aquí va el script que te pasé antes
+<script>
       const loginForm = document.querySelector('form');
       const errorDiv = document.createElement('div');
       errorDiv.style.color = 'red';
@@ -263,7 +262,7 @@
             localStorage.setItem('token', responseData.token);
             localStorage.setItem('negocioId', responseData.negocioId);
 
-            window.location.href = 'modificar.html';
+            window.location.href = 'modifica_hoteles.html';
           } else {
             errorDiv.textContent = 'Acceso denegado. Solo hoteles pueden modificar.';
           }
