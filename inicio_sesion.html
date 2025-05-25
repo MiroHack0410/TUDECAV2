@@ -4,9 +4,78 @@
   <meta charset="UTF-8" />
   <title>TUDECA - Inicio de Sesión</title>
   <style>
-    /* Conserva tu CSS original */
     body { margin: 0; font-family: Arial, sans-serif; background-color: #e7f1df; }
-    /* ... resto del CSS ... */
+    .navbar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background-color: #2f4f2f;
+      padding: 10px 20px;
+      color: white;
+    }
+    .dropbtn {
+      background-color: #2f4f2f;
+      color: white;
+      border: none;
+      font-size: 16px;
+      cursor: pointer;
+    }
+    .dropdown-content {
+      display: none;
+      position: absolute;
+      background-color: #f9f9f9;
+      min-width: 160px;
+      z-index: 1;
+    }
+    .dropdown:hover .dropdown-content {
+      display: block;
+    }
+    .dropdown-content a {
+      color: black;
+      padding: 12px 16px;
+      text-decoration: none;
+      display: block;
+    }
+    .title {
+      font-size: 24px;
+      font-weight: bold;
+    }
+    .signup-btn-link {
+      color: white;
+      text-decoration: none;
+    }
+    main {
+      padding: 20px;
+      display: flex;
+      justify-content: center;
+    }
+    .login-box {
+      background-color: white;
+      padding: 30px;
+      border-radius: 10px;
+      box-shadow: 0 0 10px rgba(0,0,0,0.1);
+      width: 300px;
+    }
+    input[type="text"], input[type="password"] {
+      width: 100%;
+      padding: 10px;
+      margin: 8px 0;
+      box-sizing: border-box;
+    }
+    .signin-btn {
+      background-color: #2f4f2f;
+      color: white;
+      border: none;
+      padding: 10px;
+      width: 100%;
+      cursor: pointer;
+      border-radius: 5px;
+      margin-top: 10px;
+    }
+    .signup-section {
+      margin-top: 20px;
+      text-align: center;
+    }
     #error-message { color: red; margin-top: 10px; }
   </style>
 </head>
@@ -27,9 +96,10 @@
   </header>
 
   <main>
+    <!-- Formulario de inicio de sesión -->
     <div class="login-box" id="login-box">
       <h3>Iniciar Sesión</h3>
-      <form id="loginForm" method="POST" action="/login">
+      <form id="loginForm" method="POST">
         <label for="correo">Correo:</label>
         <input type="text" id="correo" name="usuario" required>
 
@@ -51,6 +121,7 @@
       </form>
     </div>
 
+    <!-- Información del usuario logueado -->
     <div class="login-box" id="user-info" style="display:none;">
       <h3>Bienvenido, <span id="user-name"></span></h3>
       <p>Correo: <span id="user-email"></span></p>
@@ -109,8 +180,7 @@
         if (result.success) {
           loginMessage.style.color = 'green';
           loginMessage.textContent = result.message;
-          // Refrescar la página para actualizar UI
-          checkLogin();
+          await checkLogin();
         } else {
           loginMessage.style.color = 'red';
           loginMessage.textContent = result.message || 'Error desconocido';
@@ -122,9 +192,8 @@
     });
 
     logoutBtn.addEventListener('click', async () => {
-      // Para cerrar sesión se elimina la cookie desde backend (crea ruta /logout)
       await fetch('/logout', { method: 'POST' });
-      checkLogin();
+      window.location.reload();
     });
   </script>
 </body>
