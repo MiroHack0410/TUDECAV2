@@ -189,13 +189,12 @@ app.put('/negocio/:id', authenticateToken, async (req, res) => {
   }
 });
 
-// Servir archivos estáticos (tu frontend)
-app.use(express.static(path.join(__dirname, 'public')));
+app.use(express.static(__dirname)); // Servir archivos estáticos desde la raíz
 
-// Ruta comodín para servir index.html (SPA)
 app.get('*', (req, res) => {
-  res.sendFile(path.join(__dirname, 'public', 'index.html'));
+  res.sendFile(path.join(__dirname, 'index.html')); // Cargar index.html desde raíz
 });
+
 
 app.listen(PORT, () => {
   console.log(`Servidor corriendo en http://localhost:${PORT}`);
