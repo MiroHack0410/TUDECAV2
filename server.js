@@ -8,16 +8,20 @@ require('dotenv').config();
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-// Configura conexión a PostgreSQL con pool
+// Conexión PostgreSQL
 const pool = new Pool({
   connectionString: process.env.DATABASE_URL,
-  ssl: { rejectUnauthorized: false }, // Ajusta según tu entorno
+  ssl: { rejectUnauthorized: false }, // Ajusta esto según Render/local
 });
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-// Ruta para eliminar la tabla negocios (solo para reset)
+// ==========================
+// RUTAS PARA ADMINISTRAR DB
+// ==========================
+
+// Eliminar tabla (solo para pruebas)
 app.get('/eliminar-tabla-negocios', async (req, res) => {
   try {
     await pool.query('DROP TABLE IF EXISTS negocios;');
@@ -28,7 +32,7 @@ app.get('/eliminar-tabla-negocios', async (req, res) => {
   }
 });
 
-// Ruta para crear la tabla negocios (si no existe)
+// Crear tabla negocios
 app.get('/crear-tabla-negocios', async (req, res) => {
   try {
     await pool.query(`
@@ -46,7 +50,7 @@ app.get('/crear-tabla-negocios', async (req, res) => {
   }
 });
 
-// Ruta para insertar hoteles (ejemplo de datos iniciales)
+// Insertar hoteles con contraseña hasheada
 app.get('/insertar-hoteles', async (req, res) => {
   const hoteles = [
     { correo: 'lafinca@catemaco.com', contraseña: 'lafinca123' },
@@ -76,7 +80,9 @@ app.get('/insertar-hoteles', async (req, res) => {
   }
 });
 
-// Login
+// =====================
+// LOGIN CON JWT
+// =====================
 app.post('/auth/login', async (req, res) => {
   const { correo, contraseña } = req.body;
 
@@ -106,27 +112,22 @@ app.post('/auth/login', async (req, res) => {
 
     let tipoNegocioTexto = '';
     switch (negocio.tipo_negocio) {
-      case 1:
-        tipoNegocioTexto = 'hotel';
-        break;
-      case 2:
-        tipoNegocioTexto = 'restaurante';
-        break;
-      case 3:
-        tipoNegocioTexto = 'otro';
-        break;
-      default:
-        tipoNegocioTexto = 'otro';
+      case 1: tipoNegocioTexto = 'hotel'; break;
+      case 2: tipoNegocioTexto = 'restaurante'; break;
+      case 3: tipoNegocioTexto = 'otro'; break;
+      default: tipoNegocioTexto = 'otro';
     }
 
     res.json({ token, negocioId: negocio.id, tipo_negocio: tipoNegocioTexto });
   } catch (error) {
-    console.error(error);
+    console.error('Error en /auth/login:', error);
     res.status(500).json({ message: 'Error en el servidor' });
   }
 });
 
-// Middleware para validar token JWT
+// =====================
+// MIDDLEWARE DE AUTENTICACIÓN
+// =====================
 function authenticateToken(req, res, next) {
   const authHeader = req.headers['authorization'];
   const token = authHeader && authHeader.split(' ')[1]; // Bearer TOKEN
@@ -140,7 +141,11 @@ function authenticateToken(req, res, next) {
   });
 }
 
-// Ruta protegida para obtener negocio por id
+// =====================
+// RUTAS PROTEGIDAS
+// =====================
+
+// Obtener negocio por ID
 app.get('/negocio/:id', authenticateToken, async (req, res) => {
   const negocioId = parseInt(req.params.id);
 
@@ -161,14 +166,12 @@ app.get('/negocio/:id', authenticateToken, async (req, res) => {
   }
 });
 
-// Ruta protegida para modificar negocio por id
+// Modificar negocio por ID
 app.put('/negocio/:id', authenticateToken, async (req, res) => {
   const negocioId = parseInt(req.params.id);
   const { correo, tipo_negocio, contraseña } = req.body;
 
   try {
-    const hash = contraseña ? await bcrypt.hash(contraseña, 10) : undefined;
-
     const updateFields = [];
     const updateValues = [];
     let idx = 1;
@@ -181,7 +184,8 @@ app.put('/negocio/:id', authenticateToken, async (req, res) => {
       updateFields.push(`tipo_negocio = $${idx++}`);
       updateValues.push(tipo_negocio);
     }
-    if (hash) {
+    if (contraseña) {
+      const hash = await bcrypt.hash(contraseña, 10);
       updateFields.push(`contraseña = $${idx++}`);
       updateValues.push(hash);
     }
@@ -203,65 +207,21 @@ app.put('/negocio/:id', authenticateToken, async (req, res) => {
   }
 });
 
-app.post('/auth/login', async (req, res) => {
-  const { correo, contraseña } = req.body;
-
-  if (!correo || !contraseña) {
-    return res.status(400).json({ message: 'Completa todos los campos.' });
-  }
-
-  try {
-    const result = await pool.query('SELECT * FROM negocios WHERE correo = $1', [correo]);
-
-    if (result.rows.length === 0) {
-      return res.status(401).json({ message: 'Correo incorrecto' });
-    }
-
-    const negocio = result.rows[0];
-    const match = await bcrypt.compare(contraseña, negocio.contraseña);
-
-    if (!match) {
-      return res.status(401).json({ message: 'Contraseña incorrecta' });
-    }
-
-    const token = jwt.sign(
-      { id: negocio.id, correo: negocio.correo, tipo_negocio: negocio.tipo_negocio },
-      process.env.JWT_SECRET,
-      { expiresIn: '2h' }
-    );
-
-    let tipoNegocioTexto = '';
-    switch (negocio.tipo_negocio) {
-      case 1:
-        tipoNegocioTexto = 'hotel';
-        break;
-      case 2:
-        tipoNegocioTexto = 'restaurante';
-        break;
-      case 3:
-        tipoNegocioTexto = 'otro';
-        break;
-      default:
-        tipoNegocioTexto = 'otro';
-    }
-
-    res.json({ token, negocioId: negocio.id, tipo_negocio: tipoNegocioTexto });
-  } catch (error) {
-    console.error('Error en /auth/login:', error); // <-- Agrega este log
-    res.status(500).json({ message: 'Error en el servidor' });
-  }
-});
-
-
-// Servir archivos estáticos
+// =====================
+// ARCHIVOS ESTÁTICOS
+// =====================
 app.use(express.static(__dirname));
 
-// Ruta para manejar cualquier ruta no definida y enviar index.html
+// Redirección para rutas no definidas (SPA support)
 app.get('*', (req, res) => {
   res.sendFile(path.join(__dirname, 'index.html'));
 });
 
+// =====================
+// INICIAR SERVIDOR
+// =====================
 app.listen(PORT, () => {
   console.log(`Servidor corriendo en http://localhost:${PORT}`);
 });
+
 
