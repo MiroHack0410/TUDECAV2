@@ -184,17 +184,6 @@ app.put('/negocio/:id', authenticateToken, async (req, res) => {
   }
 });
 
-app.use(express.static(__dirname)); // Servir archivos estáticos desde la raíz
-
-app.get('*', (req, res) => {
-  res.sendFile(path.join(__dirname, 'index.html')); // Cargar index.html desde raíz
-});
-
-
-app.listen(PORT, () => {
-  console.log(`Servidor corriendo en http://localhost:${PORT}`);
-});
-
 // Ruta temporal para eliminar la tabla 'negocios' (¡ejecuta solo una vez!)
 app.get('/eliminar-tabla-negocios', async (req, res) => {
   try {
@@ -206,8 +195,13 @@ app.get('/eliminar-tabla-negocios', async (req, res) => {
   }
 });
 
+app.use(express.static(__dirname)); // Servir archivos estáticos desde la raíz
+
+app.get('*', (req, res) => {
+  res.sendFile(path.join(__dirname, 'index.html')); // Cargar index.html desde raíz
+});
 
 
-
-
-
+app.listen(PORT, () => {
+  console.log(`Servidor corriendo en http://localhost:${PORT}`);
+});
