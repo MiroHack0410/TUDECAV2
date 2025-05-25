@@ -11,18 +11,62 @@ const PORT = process.env.PORT || 3000;
 // Configura conexión a PostgreSQL con pool
 const pool = new Pool({
   connectionString: process.env.DATABASE_URL,
-  ssl: { rejectUnauthorized: false } // Solo si usas base de datos remota con SSL
+  ssl: { rejectUnauthorized: false }, // Ajusta según tu entorno
 });
 
-// Middleware para parsear JSON y urlencoded
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+
+// Ruta para eliminar la tabla negocios (usarla solo para reset)
+app.get('/eliminar-tabla-negocios', async (req, res) => {
+  try {
+    await pool.query('DROP TABLE IF EXISTS negocios;');
+    res.send('Tabla negocios eliminada correctamente.');
+  } catch (error) {
+    console.error(error);
+    res.status(500).send('Error al eliminar la tabla de negocios');
+  }
+});
+
+// Ruta para crear la tabla negocios
+app.get('/crear-tabla-negocios', async (req, res) => {
+  try {
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS negocios (
+        id SERIAL PRIMARY KEY,
+        correo VARCHAR(150) UNIQUE NOT NULL,
+        contraseña TEXT NOT NULL,
+        tipo_negocio INTEGER NOT NULL CHECK (tipo_negocio IN (1, 2, 3)),
+        user_id INTEGER -- opcional, si quieres relacionar con usuarios
+      );
+    `);
+    res.send('Tabla negocios creada correctamente.');
+  } catch (error) {
+    console.error(error);
+    res.status(500).send('Error al crear la tabla de negocios');
+  }
+});
+
+// Ruta para insertar hoteles con contraseñas hasheadas
+app.get('/insertar-hoteles', async (req, res) => {
+  const hoteles = [
+    { correo: 'lafinca@catemaco.com', contraseña: 'lafinca123' },
+    { correo: 'playacristal@catemaco.com', contraseña: 'cristal123' },
+    { correo: 'lasbrisas@catemaco.com', contraseña: 'brisas123' },
+    { correo: 'koniapan@catemaco.com', contraseña: 'koniapan123' },
+    { correo: 'delangel@catemaco.com', contraseña: 'angel123' },
+    { correo: 'dellago@catemaco.com', contraseña: 'lago123' },
+    { correo: 'losarcos@catemaco.com', contraseña: 'arcos123' },
+    { correo: 'pescador@catemaco.com', contraseña: 'pescador123' },
+    { correo: 'irefel@catemaco.com', contraseña: 'irefel123' },
+  ];
 
   try {
     for (const hotel of hoteles) {
       const hash = await bcrypt.hash(hotel.contraseña, 10);
       await pool.query(
-        'INSERT INTO negocios (correo, contraseña, tipo_negocio) VALUES ($1, $2, 1) ON CONFLICT (correo) DO NOTHING',
+        `INSERT INTO negocios (correo, contraseña, tipo_negocio) VALUES ($1, $2, 1)
+         ON CONFLICT (correo) DO NOTHING`,
         [hotel.correo, hash]
       );
     }
@@ -30,34 +74,6 @@ app.use(express.urlencoded({ extended: true }));
   } catch (error) {
     console.error(error);
     res.status(500).send('Error al insertar hoteles.');
-  }
-});
-
-// Registro de usuario
-app.post('/register', async (req, res) => {
-  const { nombre, apellido, telefono, correo, sexo, contraseña } = req.body;
-
-  if (!nombre || !apellido || !telefono || !correo || !sexo || !contraseña) {
-    return res.status(400).send('Completa todos los campos.');
-  }
-
-  try {
-    const existing = await pool.query('SELECT * FROM usuarios WHERE correo = $1', [correo]);
-    if (existing.rows.length > 0) {
-      return res.status(400).send('El correo ya está registrado.');
-    }
-
-    const hash = await bcrypt.hash(contraseña, 10);
-
-    await pool.query(
-      'INSERT INTO usuarios (nombre, apellido, telefono, correo, sexo, contraseña) VALUES ($1, $2, $3, $4, $5, $6)',
-      [nombre, apellido, telefono, correo, sexo, hash]
-    );
-
-    res.send('Registro completado con éxito');
-  } catch (error) {
-    console.error(error);
-    res.status(500).send('Error del servidor');
   }
 });
 
@@ -69,21 +85,21 @@ app.post('/login', async (req, res) => {
   }
 
   try {
-    const result = await pool.query('SELECT * FROM usuarios WHERE correo = $1', [correo]);
+    const result = await pool.query('SELECT * FROM negocios WHERE correo = $1', [correo]);
 
     if (result.rows.length === 0) {
       return res.status(400).send('Correo incorrecto');
     }
 
-    const usuario = result.rows[0];
+    const negocio = result.rows[0];
 
-    const match = await bcrypt.compare(contraseña, usuario.contraseña);
+    const match = await bcrypt.compare(contraseña, negocio.contraseña);
     if (!match) {
       return res.status(400).send('Contraseña incorrecta');
     }
 
     const token = jwt.sign(
-      { id: usuario.id, correo: usuario.correo },
+      { id: negocio.id, correo: negocio.correo },
       process.env.JWT_SECRET,
       { expiresIn: '2h' }
     );
@@ -109,23 +125,15 @@ function authenticateToken(req, res, next) {
   });
 }
 
-// Obtener negocio por ID, solo si es del usuario autenticado
+// Ruta protegida para obtener negocio por id
 app.get('/negocio/:id', authenticateToken, async (req, res) => {
   const negocioId = parseInt(req.params.id);
-  const userId = req.user.id;
 
   try {
-    const query = `
-      SELECT id, tipo_negocio, correo, nombre, descripcion, direccion, mapa_url 
-      FROM negocios 
-      WHERE id = $1 AND user_id = $2
-    `;
-    const { rows } = await pool.query(query, [negocioId, userId]);
-
+    const { rows } = await pool.query('SELECT id, tipo_negocio, correo FROM negocios WHERE id = $1', [negocioId]);
     if (rows.length === 0) {
-      return res.status(404).json({ error: 'Negocio no encontrado o no autorizado' });
+      return res.status(404).json({ error: 'Negocio no encontrado' });
     }
-
     res.json(rows[0]);
   } catch (error) {
     console.error(error);
@@ -133,21 +141,39 @@ app.get('/negocio/:id', authenticateToken, async (req, res) => {
   }
 });
 
-// Modificar negocio solo si es del usuario autenticado
+// Ruta protegida para modificar negocio por id
 app.put('/negocio/:id', authenticateToken, async (req, res) => {
   const negocioId = parseInt(req.params.id);
-  const userId = req.user.id;
-  const { nombre, descripcion, direccion, mapa_url } = req.body;
+  const { correo, tipo_negocio, contraseña } = req.body;
 
   try {
-    const check = await pool.query('SELECT * FROM negocios WHERE id = $1 AND user_id = $2', [negocioId, userId]);
-    if (check.rows.length === 0) {
-      return res.status(404).json({ error: 'Negocio no encontrado o no autorizado' });
+    const hash = contraseña ? await bcrypt.hash(contraseña, 10) : undefined;
+
+    const updateFields = [];
+    const updateValues = [];
+    let idx = 1;
+
+    if (correo) {
+      updateFields.push(`correo = $${idx++}`);
+      updateValues.push(correo);
+    }
+    if (tipo_negocio) {
+      updateFields.push(`tipo_negocio = $${idx++}`);
+      updateValues.push(tipo_negocio);
+    }
+    if (hash) {
+      updateFields.push(`contraseña = $${idx++}`);
+      updateValues.push(hash);
+    }
+    if (updateFields.length === 0) {
+      return res.status(400).json({ error: 'No hay datos para actualizar' });
     }
 
-    await pool.query(`
-      UPDATE negocios SET nombre = $1, descripcion = $2, direccion = $3, mapa_url = $4 WHERE id = $5
-    `, [nombre, descripcion, direccion, mapa_url, negocioId]);
+    updateValues.push(negocioId); // para el WHERE
+
+    const query = `UPDATE negocios SET ${updateFields.join(', ')} WHERE id = $${idx}`;
+
+    await pool.query(query, updateValues);
 
     res.json({ mensaje: 'Negocio actualizado correctamente' });
   } catch (error) {
@@ -155,17 +181,6 @@ app.put('/negocio/:id', authenticateToken, async (req, res) => {
     res.status(500).json({ error: 'Error al actualizar el negocio' });
   }
 });
-
-app.get('/eliminar-tabla-negocios', async (req, res) => {
-  try {
-    await pool.query('DROP TABLE IF EXISTS negocios;');
-    res.send('Tabla negocios eliminada correctamente.');
-  } catch (error) {
-    console.error(error);
-    res.status(500).send('Error al eliminar la tabla de negocios');
-  }
-});
-
 
 app.use(express.static(__dirname));
 
@@ -176,3 +191,4 @@ app.get('*', (req, res) => {
 app.listen(PORT, () => {
   console.log(`Servidor corriendo en http://localhost:${PORT}`);
 });
+
