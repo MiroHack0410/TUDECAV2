@@ -7,7 +7,7 @@ const bcrypt = require('bcrypt'); // Agregado bcrypt
 require('dotenv').config();
 
 const app = express();
-const PORT = process.env.PORT || 2000;
+const PORT = process.env.PORT || 3000;
 
 // Configura tu conexión a PostgreSQL con un solo pool
 const pool = new Pool({
@@ -181,13 +181,4 @@ app.use(express.static(__dirname)); // Servir archivos estáticos desde la raíz
 
 app.get('*', (req, res) => {
   res.sendFile(path.join(__dirname, 'index.html')); // Cargar index.html desde raíz
-});
-
-// Única llamada a app.listen()
-app.listen(PORT, () => {
-  console.log(`Servidor corriendo en http://localhost:${PORT}`);
-});
-
-app.listen(PORT, () => {
-  console.log(`Servidor corriendo en http://localhost:${PORT}`);
 });
