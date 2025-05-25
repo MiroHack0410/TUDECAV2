@@ -3,6 +3,7 @@ const express = require('express');
 const path = require('path');
 const { Pool } = require('pg');
 const jwt = require('jsonwebtoken');
+const bcrypt = require('bcrypt'); // Agregado bcrypt
 require('dotenv').config();
 
 const app = express();
@@ -46,11 +47,6 @@ app.get('/insertar-hoteles', async (req, res) => {
   }
 });
 
-app.listen(PORT, () => {
-  console.log(`Servidor escuchando en puerto ${PORT}`);
-});
-
-
 // Registro de usuario
 app.post('/register', async (req, res) => {
   const { nombre, apellido, telefono, correo, sexo, contraseña } = req.body;
@@ -66,10 +62,13 @@ app.post('/register', async (req, res) => {
       return res.status(400).send('El correo ya está registrado.');
     }
 
-    // Insertar usuario
+    // Hashear contraseña antes de guardar
+    const hash = await bcrypt.hash(contraseña, 10);
+
+    // Insertar usuario con contraseña hasheada
     await pool.query(
       'INSERT INTO usuarios (nombre, apellido, telefono, correo, sexo, contraseña) VALUES ($1, $2, $3, $4, $5, $6)',
-      [nombre, apellido, telefono, correo, sexo, contraseña]
+      [nombre, apellido, telefono, correo, sexo, hash]
     );
 
     res.send('Registro completado con éxito');
@@ -95,7 +94,9 @@ app.post('/login', async (req, res) => {
 
     const usuario = result.rows[0];
 
-    if (usuario.contraseña !== contraseña) {
+    // Comparar contraseña con hash
+    const match = await bcrypt.compare(contraseña, usuario.contraseña);
+    if (!match) {
       return res.status(400).send('Contraseña incorrecta');
     }
 
@@ -182,6 +183,10 @@ app.get('*', (req, res) => {
   res.sendFile(path.join(__dirname, 'index.html')); // Cargar index.html desde raíz
 });
 
+// Única llamada a app.listen()
+app.listen(PORT, () => {
+  console.log(`Servidor corriendo en http://localhost:${PORT}`);
+});
 
 app.listen(PORT, () => {
   console.log(`Servidor corriendo en http://localhost:${PORT}`);
