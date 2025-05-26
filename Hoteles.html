@@ -2,136 +2,111 @@
 <html lang="es">
 <head>
   <meta charset="UTF-8" />
-  <title>Hoteles TUDECA</title>
+  <title> Hoteles - TUDECA</title>
   <style>
     body {
-      margin: 0; font-family: Arial, sans-serif; background-color: #e7f1df; padding: 20px;
+      margin: 0;
+      font-family: Arial, sans-serif;
+      background-color: #e7f1df;
     }
-    .navbar {
+    .container {
+      max-width: 900px;
+      margin: 20px auto;
+      background: #fff;
+      padding: 20px;
+      border-radius: 8px;
+      box-shadow: 0 0 10px #aaa;
+    }
+    .cards {
+      margin-top: 20px;
       display: flex;
-      justify-content: space-between;
-      align-items: center;
-      background-color: #5a9352;
-      padding: 10px 20px;
-      color: white;
+      flex-wrap: wrap;
+      gap: 15px;
     }
-
-    .dropdown {
-      position: relative;
-    }
-
-    .dropbtn {
-      background-color: #4d7a44;
-      color: white;
-      padding: 10px;
-      border: none;
-      cursor: pointer;
-      font-size: 16px;
-    }
-
-    .dropdown-content {
-      display: none;
-      position: absolute;
-      background-color: #2f4f2f;
-      min-width: 160px;
-      z-index: 1;
-    }
-
-    .dropdown-content a {
-      color: white;
-      padding: 10px 16px;
-      text-decoration: none;
-      display: block;
-    }
-
-    .dropdown-content a:hover {
-      background-color: #4d7a44;
-    }
-
-    .dropdown:hover .dropdown-content {
-      display: block;
-    }
-
-    .title {
-      font-size: 24px;
-      font-weight: bold;
-    }
-
     .card {
-      background: white;
-      border-radius: 6px;
-      box-shadow: 0 0 5px rgba(0,0,0,0.15);
-      margin-bottom: 15px;
+      background: #f9f9f9;
+      border-radius: 8px;
+      box-shadow: 0 0 5px #bbb;
       padding: 15px;
-      max-width: 600px;
+      width: calc(33% - 10px);
+      box-sizing: border-box;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
     }
-    .card h4 {
-      margin: 0 0 10px 0;
+    .card img {
+      width: 100%;
+      height: 150px;
+      object-fit: cover;
+      border-radius: 6px;
     }
-    .stars {
-      color: #ffa500;
-      margin-bottom: 10px;
+    .card h3 {
+      margin: 10px 0 5px;
     }
-    .desc, .direccion {
-      margin-bottom: 8px;
+    .card p {
       font-size: 14px;
-      color: #444;
+      margin: 5px 0;
+      flex-grow: 1;
     }
-    .reserva-btn {
-      background-color: #3e6b3d;
-      padding: 8px 12px;
-      color: white;
-      text-decoration: none;
-      border-radius: 4px;
-      font-weight: bold;
+    .card small {
+      font-size: 12px;
+      color: #555;
     }
-    .reserva-btn:hover {
-      background-color: #2f4f29;
+    .estrellas {
+      font-size: 18px;
+      color: gold;
+      margin: 5px 0;
+      display: inline-block;
+    }
+    .mapa iframe {
+      width: 100%;
+      height: 180px;
+      border: none;
+      border-radius: 6px;
+      margin-top: 10px;
+    }
+    @media(max-width: 700px){
+      .card {
+        width: 100%;
+      }
     }
   </style>
 </head>
 <body>
-
-<header class="navbar">
-  <div class="dropdown">
-    <button class="dropbtn">Menú &#9662;</button>
-    <div class="dropdown-content">
-      <a href="Hotel.html">Hoteles</a>
-      <a href="#">Restaurantes</a>
-      <a href="#">Atracciones</a>
-    </div>
+  <div class="container">
+    <h1>Lugares - TUDECA</h1>
+    <div class="cards" id="lista-lugares"></div>
   </div>
-  <div class="title">TUDECA</div>
-  <div><a href="index.html" class="signup-btn-link" style="color: white; text-decoration: none;">Inicio</a></div>
-</header>
 
-<h2>Hoteles en TUDECA</h2>
-<div id="lista"></div>
+  <script>
+    const tipoActual = 'hoteles'; // Cambia por 'restaurantes' o 'puntos_interes' según lo que quieras mostrar
+    const listaLugares = document.getElementById('lista-lugares');
 
-<script>
-  async function cargarHoteles() {
-    const res = await fetch('/api/hoteles');
-    const datos = await res.json();
-    const listaDiv = document.getElementById('lista');
-    listaDiv.innerHTML = '';
+    async function cargarLugares() {
+      try {
+        const res = await fetch(`/api/${tipoActual}`);
+        const data = await res.json();
+        listaLugares.innerHTML = '';
+        data.forEach(item => {
+          const card = document.createElement('div');
+          card.className = 'card';
+          card.innerHTML = `
+            <img src="${item.imagen_url}" alt="${item.nombre}" onerror="this.src='/Imagenes/default.jpg'"/>
+            <h3>${item.nombre}</h3>
+            <div class="estrellas">${'★'.repeat(parseInt(item.estrellas) || 0)}</div>
+            <p>${item.descripcion}</p>
+            <small>${item.direccion}</small>
+            <div class="mapa">${item.iframe_mapa}</div>
+          `;
+          listaLugares.appendChild(card);
+        });
+      } catch (err) {
+        listaLugares.innerHTML = '<p>Error al cargar los lugares.</p>';
+        console.error(err);
+      }
+    }
 
-    datos.forEach(item => {
-      const estrellas = '★'.repeat(item.estrellas) + '☆'.repeat(5 - item.estrellas);
-      const card = document.createElement('div');
-      card.className = 'card';
-      card.innerHTML = `
-        <h4>${item.nombre}</h4>
-        <div class="stars">${estrellas}</div>
-        <div class="desc">${item.descripcion}</div>
-        <div class="direccion"><strong>Dirección:</strong> ${item.direccion}</div>
-        <a href="#" class="reserva-btn">Reserva</a>
-      `;
-      listaDiv.appendChild(card);
-    });
-  }
-
-  cargarHoteles();
-</script>
-
+    cargarLugares();
+  </script>
 </body>
 </html>
