@@ -109,6 +109,28 @@ app.post('/crear-tabla-usuariosv2', async (req, res) => {
   }
 })();
 
+// Asume que ya tienes configurado pool con pg
+const { Pool } = require('pg');
+const pool = new Pool({
+  connectionString: process.env.DATABASE_URL,
+  ssl: { rejectUnauthorized: false } // si estás en Render
+});
+
+// Script para agregar las columnas si no existen
+async function agregarColumnasImagen() {
+  try {
+    await pool.query(`ALTER TABLE hoteles ADD COLUMN IF NOT EXISTS imagen_url TEXT;`);
+    await pool.query(`ALTER TABLE restaurantes ADD COLUMN IF NOT EXISTS imagen_url TEXT;`);
+    await pool.query(`ALTER TABLE puntos_interes ADD COLUMN IF NOT EXISTS imagen_url TEXT;`);
+    console.log('Columnas imagen_url agregadas (o ya existían)');
+  } catch (error) {
+    console.error('Error al agregar columnas imagen_url:', error);
+  }
+}
+
+// Llama a esta función al iniciar tu app
+agregarColumnasImagen();
+
 // Registro de usuarios (turistas)
 app.post('/registro', async (req, res) => {
   const { nombre, apellido, telefono, correo, sexo, password } = req.body;
