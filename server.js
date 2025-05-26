@@ -19,13 +19,11 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
 
-// Sirve archivos estáticos de la raíz (tu frontend, index.html, etc)
+// Servir archivos estáticos (frontend + imágenes)
 app.use(express.static(__dirname));
-
-// Sirve imágenes desde la carpeta /Imagenes
 app.use('/Imagenes', express.static(path.join(__dirname, 'Imagenes')));
 
-// --- Crear tabla usuariosv2 ---
+// Crear tabla usuariosv2 si no existe
 app.post('/crear-tabla-usuariosv2', async (req, res) => {
   try {
     await pool.query(`
@@ -47,22 +45,19 @@ app.post('/crear-tabla-usuariosv2', async (req, res) => {
   }
 });
 
-// Insertar administrador si no existe
+// Insertar administrador por defecto si no existe
 (async () => {
   const adminCorreo = 'admin@tudeca.com';
   const adminPasswordPlano = 'emirbb18';
 
   try {
     const result = await pool.query('SELECT * FROM usuariosv2 WHERE correo = $1 AND rol = 1', [adminCorreo]);
-
     if (result.rows.length === 0) {
       const hashedPassword = await bcrypt.hash(adminPasswordPlano, 10);
-
       await pool.query(`
         INSERT INTO usuariosv2 (correo, password, rol)
         VALUES ($1, $2, 1)
       `, [adminCorreo, hashedPassword]);
-
       console.log('✅ Administrador insertado automáticamente');
     } else {
       console.log('🔎 El administrador ya existe');
@@ -72,7 +67,7 @@ app.post('/crear-tabla-usuariosv2', async (req, res) => {
   }
 })();
 
-// Crear tablas hoteles, restaurantes y puntos_interes
+// Crear tablas hoteles, restaurantes y puntos_interes si no existen
 (async () => {
   try {
     await pool.query(`
@@ -86,7 +81,6 @@ app.post('/crear-tabla-usuariosv2', async (req, res) => {
         imagen_url TEXT
       );
     `);
-
     await pool.query(`
       CREATE TABLE IF NOT EXISTS restaurantes (
         id SERIAL PRIMARY KEY,
@@ -98,7 +92,6 @@ app.post('/crear-tabla-usuariosv2', async (req, res) => {
         imagen_url TEXT
       );
     `);
-
     await pool.query(`
       CREATE TABLE IF NOT EXISTS puntos_interes (
         id SERIAL PRIMARY KEY,
@@ -110,14 +103,13 @@ app.post('/crear-tabla-usuariosv2', async (req, res) => {
         imagen_url TEXT
       );
     `);
-
     console.log('✅ Tablas hoteles, restaurantes y puntos_interes creadas/verificadas');
   } catch (err) {
     console.error('❌ Error al crear tablas:', err);
   }
 })();
 
-// Registro de usuarios
+// Registro de usuarios (turistas)
 app.post('/registro', async (req, res) => {
   const { nombre, apellido, telefono, correo, sexo, password } = req.body;
   try {
@@ -256,12 +248,12 @@ app.put('/api/:tipo/:id', validarTipoLugar, async (req, res) => {
   }
 });
 
-// Para cualquier otra ruta, servir el index.html (SPA)
+// SPA fallback
 app.get('*', (req, res) => {
   res.sendFile(path.join(__dirname, 'index.html'));
 });
 
-// Aquí solo UNA vez, inicia el servidor
+// Iniciar servidor
 app.listen(PORT, () => {
   console.log(`Servidor corriendo en http://localhost:${PORT}`);
 });
