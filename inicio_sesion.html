@@ -198,7 +198,7 @@
   </main>
 
   <script>
-      const form = document.getElementById('formulario-login');
+  const form = document.getElementById('formulario-login');
 
   form.addEventListener('submit', async (e) => {
     e.preventDefault();
@@ -213,18 +213,23 @@
         body: JSON.stringify({ correo, contrasena })
       });
 
-      if (!response.ok) {
-        const errorText = await response.text();
-        alert(errorText);
-        return;
-      }
-
       const data = await response.json();
-      window.location.href = data.redireccion;
+
+      if (response.ok) {
+        if (data.rol === 1) {
+          window.location.href = 'admin.html';
+        } else if (data.rol === 2) {
+          window.location.href = 'index.html';
+        } else {
+          alert('Rol desconocido');
+        }
+      } else {
+        alert(data.mensaje || 'Error al iniciar sesión');
+      }
 
     } catch (err) {
       console.error('Error en login:', err);
-      alert('Error en la conexión');
+      alert('Error en la conexión con el servidor');
     }
   });
     
