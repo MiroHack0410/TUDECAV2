@@ -60,16 +60,6 @@
         font-weight: bold;
     }
 
-    .user-icon {
-        width: 32px;
-        height: 32px;
-        background-color: #2d4729;
-        border-radius: 50%;
-        background-image: url('https://cdn-icons-png.flaticon.com/512/1077/1077012.png');
-        background-size: cover;
-        background-position: center;
-    }
-
     main {
         display: flex;
         justify-content: center;
@@ -121,15 +111,6 @@
         background-color: #4a7946;
     }
 
-    .links {
-        margin-top: 10px;
-    }
-
-    .links a {
-        color: #5a9352;
-        text-decoration: none;
-    }
-
     .signup-section {
         margin-top: 20px;
     }
@@ -146,6 +127,12 @@
 
     .signup-btn-link:hover {
         background-color: #4a7946;
+    }
+
+    #error-message {
+        color: red;
+        margin-top: 10px;
+        text-align: center;
     }
   </style>
 </head>
@@ -177,16 +164,12 @@
 
         <button type="submit" class="signin-btn">Iniciar Sesión</button>
 
-        <div class="links">
-          <a href="#">¿Olvidó la contraseña?</a>
-        </div>
-
         <div class="signup-section">
           <p>¿No tienes cuenta?</p>
           <a href="registro.html" class="signup-btn-link">Crear Usuario</a>
         </div>
 
-        <div id="error-message" style="color: red; margin-top: 10px;"></div>
+        <div id="error-message"></div>
       </form>
     </div>
 
@@ -198,44 +181,9 @@
   </main>
 
   <script>
-  const form = document.getElementById('formulario-login');
-
-  form.addEventListener('submit', async (e) => {
-    e.preventDefault();
-
-    const correo = document.getElementById('correo').value;
-    const contrasena = document.getElementById('contrasena').value;
-
-    try {
-      const response = await fetch('/iniciar-sesion', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ correo, contrasena })
-      });
-
-      const data = await response.json();
-
-      if (response.ok) {
-        if (data.rol === 1) {
-          window.location.href = 'admin.html';
-        } else if (data.rol === 2) {
-          window.location.href = 'index.html';
-        } else {
-          alert('Rol desconocido');
-        }
-      } else {
-        alert(data.mensaje || 'Error al iniciar sesión');
-      }
-
-    } catch (err) {
-      console.error('Error en login:', err);
-      alert('Error en la conexión con el servidor');
-    }
-  });
-    
-    // Manejo del formulario para login sin recarga
+    // Enviar formulario sin recargar
     document.getElementById('loginForm').addEventListener('submit', async function(e) {
-      e.preventDefault(); // evitar recarga
+      e.preventDefault();
 
       const usuario = document.getElementById('correo').value;
       const password = document.getElementById('contraseña').value;
@@ -255,51 +203,41 @@
           window.location.reload();
         } else {
           // Mostrar error si falla login
-          document.getElementById('error-message').textContent = data.mensaje || "Error en login";
+          document.getElementById('error-message').textContent = data.mensaje || "Correo o contraseña incorrectos";
         }
       } catch (error) {
         document.getElementById('error-message').textContent = "Error de conexión";
       }
     });
 
-    // Al cargar la página, verificamos si hay usuario autenticado
-    fetch('/perfil', {
-      credentials: 'include' // Enviar cookies / tokens
-    })
-    .then(async res => {
-      if (res.ok) {
-        const usuario = await res.json();
+    // Al cargar la página, verificamos si hay usuario autenticado para mostrar info o login
+    async function checkSession() {
+      try {
+        const res = await fetch('/perfil', { credentials: 'include' });
+        if (res.ok) {
+          const usuario = await res.json();
 
-        // Ocultar login y mostrar info usuario
-        document.getElementById('login-box').style.display = 'none';
-        document.getElementById('user-info').style.display = 'block';
+          document.getElementById('login-box').style.display = 'none';
+          document.getElementById('user-info').style.display = 'block';
 
-        // Mostrar nombre y correo
-        document.getElementById('user-name').textContent = usuario.nombre + ' ' + usuario.apellido;
-        document.getElementById('user-email').textContent = usuario.correo;
+          document.getElementById('user-name').textContent = usuario.nombre + ' ' + usuario.apellido;
+          document.getElementById('user-email').textContent = usuario.correo;
 
-        // Asignar acción de logout
-        document.getElementById('logout-btn').onclick = () => {
-          fetch('/logout', {
-            method: 'POST',
-            credentials: 'include'
-          }).then(() => {
-            // Redirigir a login tras cerrar sesión
+          document.getElementById('logout-btn').onclick = async () => {
+            await fetch('/logout', { method: 'POST', credentials: 'include' });
             window.location.href = 'inicio_sesion.html';
-          });
-        };
-
-      } else {
-        // No autenticado, mostrar login y ocultar info usuario
+          };
+        } else {
+          document.getElementById('login-box').style.display = 'block';
+          document.getElementById('user-info').style.display = 'none';
+        }
+      } catch {
         document.getElementById('login-box').style.display = 'block';
         document.getElementById('user-info').style.display = 'none';
       }
-    })
-    .catch(() => {
-      // En caso de error, mostrar login y ocultar info usuario
-      document.getElementById('login-box').style.display = 'block';
-      document.getElementById('user-info').style.display = 'none';
-    });
+    }
+
+    checkSession();
   </script>
 </body>
 </html>
