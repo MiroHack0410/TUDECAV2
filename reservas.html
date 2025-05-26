@@ -2,272 +2,204 @@
 <html lang="es">
 <head>
   <meta charset="UTF-8" />
-  <title>TUDECA - Reservas</title>
+  <title>Reservas - TUDECA</title>
   <style>
     body {
       font-family: Arial, sans-serif;
-      background-color: #e7f1df;
-      margin: 0;
-      padding: 0;
+      background-color: #f2f2f2;
+      margin: 20px;
     }
 
-    .navbar {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      background-color: #5a9352;
-      padding: 10px 20px;
+    h2 {
+      color: #333;
     }
 
-    .dropdown {
-      position: relative;
+    select, input, button {
+      margin: 10px 0;
+      padding: 8px;
+      font-size: 14px;
     }
 
-    .dropbtn {
-      background-color: #4a7946;
-      color: white;
-      padding: 10px;
-      font-size: 16px;
-      border: none;
-      cursor: pointer;
+    .habitaciones {
+      margin-top: 20px;
     }
 
-    .dropdown-content {
-      display: none;
-      position: absolute;
-      background-color: #2d4729;
-      box-shadow: 0px 8px 16px rgba(0,0,0,0.2);
-      z-index: 1;
-    }
-
-    .dropdown-content a {
-      color: white;
-      padding: 12px 16px;
-      display: block;
-      text-decoration: none;
-    }
-
-    .dropdown-content a:hover {
-      background-color: #3e6142;
-    }
-
-    .dropdown:hover .dropdown-content {
-      display: block;
-    }
-
-    .title {
-      font-size: 24px;
-      color: black;
-      font-weight: bold;
-    }
-
-    .signup-btn-link {
-      color: white;
-      font-weight: bold;
-      text-decoration: none;
-      font-size: 16px;
-    }
-
-    main {
-      max-width: 900px;
-      margin: 40px auto;
-      padding: 0 20px;
-    }
-
-    .btn-habitacion {
-      background-color: #256028;
-      color: white;
-      border: none;
-      padding: 8px 15px;
+    .habitaciones button {
       margin: 5px;
+      padding: 10px 15px;
+      font-size: 14px;
       cursor: pointer;
-      border-radius: 3px;
-      font-weight: bold;
-      transition: background-color 0.3s ease;
+      background-color: #4CAF50;
+      color: white;
+      border: none;
+      border-radius: 4px;
     }
 
-    .btn-habitacion:hover {
-      background-color: #1d4c21;
-    }
-
-    .btn-habitacion.reservada {
+    .habitaciones button.reservada {
       background-color: red;
       cursor: not-allowed;
     }
 
-    #form-reserva {
-      background: white;
+    #formulario-reserva {
+      display: none;
+      margin-top: 20px;
       padding: 15px;
-      margin-top: 15px;
-      border-radius: 5px;
-      box-shadow: 0 0 5px rgba(0,0,0,0.1);
-      max-width: 400px;
+      background: #fff;
+      border: 1px solid #ccc;
     }
 
-    #form-reserva label {
+    label {
       display: block;
       margin-top: 10px;
-      font-weight: bold;
     }
 
-    #form-reserva input {
+    input[type="text"], input[type="email"], input[type="tel"], input[type="date"] {
       width: 100%;
-      padding: 7px;
+      padding: 8px;
       margin-top: 5px;
-      box-sizing: border-box;
-      border: 1px solid #ccc;
-      border-radius: 3px;
-      font-size: 14px;
     }
 
-    #form-reserva button {
-      width: 100%;
-      padding: 10px;
-      background-color: #256028;
-      color: white;
-      border: none;
-      font-weight: bold;
-      border-radius: 3px;
+    #mensaje {
       margin-top: 15px;
-      font-size: 16px;
-    }
-
-    #form-reserva button:hover {
-      background-color: #1d4c21;
-    }
-
-    #mensaje-reserva {
-      margin-top: 10px;
       color: green;
-      font-weight: bold;
-    }
-
-    #error-reserva {
-      margin-top: 10px;
-      color: red;
-      font-weight: bold;
     }
   </style>
 </head>
 <body>
+  <h2>Reservar Habitación</h2>
 
-<header>
-  <div class="navbar">
-    <div class="dropdown">
-      <button class="dropbtn">Menú ▼</button>
-      <div class="dropdown-content">
-        <a href="Hotel.html">Hoteles</a>
-        <a href="restaurantes.html">Restaurantes</a>
-        <a href="puntos_interes.html">Atracciones</a>
-      </div>
-    </div>
-    <div class="title">TUDECA</div>
-    <div><a href="index.html" class="signup-btn-link">Inicio</a></div>
-  </div>
-</header>
+  <label for="hotelSelect">Selecciona un hotel:</label>
+  <select id="hotelSelect"></select>
 
-<main>
-  <div id="contenedor-reserva"></div>
-  <div id="mensaje-reserva"></div>
-  <div id="error-reserva"></div>
-</main>
+  <div class="habitaciones" id="habitaciones"></div>
 
-<script>
-  document.addEventListener('DOMContentLoaded', async () => {
-    const hotelId = localStorage.getItem('hotelSeleccionado');
-    if (!hotelId) {
-      alert('No se ha seleccionado un hotel.');
-      window.location.href = 'index.html';
-      return;
+  <form id="formulario-reserva">
+    <h3>Formulario de Reserva</h3>
+    <input type="hidden" id="hotel_id" />
+    <input type="hidden" id="num_habitacion" />
+
+    <label for="nombre_huesped">Nombre del huésped:</label>
+    <input type="text" id="nombre_huesped" required />
+
+    <label for="correo">Correo:</label>
+    <input type="email" id="correo" required />
+
+    <label for="celular">Celular:</label>
+    <input type="tel" id="celular" required />
+
+    <label for="fecha_inicio">Fecha de inicio:</label>
+    <input type="date" id="fecha_inicio" required />
+
+    <label for="fecha_fin">Fecha de fin:</label>
+    <input type="date" id="fecha_fin" required />
+
+    <button type="submit">Reservar</button>
+  </form>
+
+  <div id="mensaje"></div>
+
+  <script>
+    let reservas = [];
+    const hotelSelect = document.getElementById('hotelSelect');
+    const habitacionesDiv = document.getElementById('habitaciones');
+    const formulario = document.getElementById('formulario-reserva');
+    const mensajeDiv = document.getElementById('mensaje');
+
+    // Obtener hoteles
+    async function cargarHoteles() {
+      const res = await fetch('/hoteles');
+      const hoteles = await res.json();
+
+      hotelSelect.innerHTML = '<option value="">--Selecciona--</option>';
+      hoteles.forEach(hotel => {
+        const option = document.createElement('option');
+        option.value = hotel.id;
+        option.textContent = hotel.nombre;
+        hotelSelect.appendChild(option);
+      });
     }
 
-    const contenedor = document.getElementById('contenedor-reserva');
+    // Obtener reservas existentes
+    async function cargarReservas() {
+      const res = await fetch('/reservas');
+      reservas = await res.json();
+    }
 
-    try {
-      const res = await fetch(`/api/habitaciones/${hotelId}`);
-      const habitaciones = await res.json();
+    // Generar botones de habitaciones
+    async function generarHabitaciones(hotelId) {
+      habitacionesDiv.innerHTML = '';
+      formulario.style.display = 'none';
+      mensajeDiv.textContent = '';
 
-      if (habitaciones.length === 0) {
-        contenedor.innerHTML = '<p>No hay habitaciones disponibles para este hotel.</p>';
-        return;
-      }
+      const res = await fetch(`/hotel/${hotelId}`);
+      const hotel = await res.json();
 
-      contenedor.innerHTML = '<h2>Seleccione una habitación:</h2>';
-      const lista = document.createElement('div');
-      lista.className = 'lista-habitaciones';
-
-      habitaciones.forEach(hab => {
+      for (let i = 1; i <= hotel.num_habitaciones; i++) {
         const btn = document.createElement('button');
-        btn.textContent = `Habitación ${hab.numero}`;
-        btn.className = 'btn-habitacion';
-        btn.addEventListener('click', () => mostrarFormularioReserva(hotelId, hab.numero, btn));
-        lista.appendChild(btn);
+        btn.textContent = i;
+        btn.dataset.habitacion = i;
+
+        const yaReservada = reservas.some(r => r.hotel_id == hotelId && r.num_habitacion == i);
+        if (yaReservada) {
+          btn.classList.add('reservada');
+          btn.disabled = true;
+        }
+
+        btn.onclick = () => {
+          document.getElementById('hotel_id').value = hotelId;
+          document.getElementById('num_habitacion').value = i;
+          formulario.style.display = 'block';
+        };
+
+        habitacionesDiv.appendChild(btn);
+      }
+    }
+
+    // Enviar reserva
+    formulario.addEventListener('submit', async e => {
+      e.preventDefault();
+
+      const datos = {
+        hotel_id: document.getElementById('hotel_id').value,
+        num_habitacion: document.getElementById('num_habitacion').value,
+        nombre_huesped: document.getElementById('nombre_huesped').value,
+        correo: document.getElementById('correo').value,
+        celular: document.getElementById('celular').value,
+        fecha_inicio: document.getElementById('fecha_inicio').value,
+        fecha_fin: document.getElementById('fecha_fin').value
+      };
+
+      const res = await fetch('/reserva', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(datos)
       });
 
-      contenedor.appendChild(lista);
-
-    } catch (error) {
-      console.error(error);
-      contenedor.innerHTML = '<p>Error al cargar habitaciones.</p>';
-    }
-  });
-
-  function mostrarFormularioReserva(hotelId, numeroHabitacion, boton) {
-    const contenedor = document.getElementById('contenedor-reserva');
-    const form = document.createElement('form');
-    form.id = 'form-reserva';
-    form.innerHTML = `
-      <h3>Reservar Habitación ${numeroHabitacion}</h3>
-      <input type="hidden" name="hotel_id" value="${hotelId}">
-      <input type="hidden" name="numero_habitacion" value="${numeroHabitacion}">
-      <label>Nombre del huésped:</label>
-      <input type="text" name="nombre_huesped" required>
-      <label>Correo electrónico:</label>
-      <input type="email" name="correo" required>
-      <label>Celular:</label>
-      <input type="tel" name="celular" required>
-      <label>Fecha de entrada:</label>
-      <input type="date" name="fecha_entrada" required>
-      <label>Fecha de salida:</label>
-      <input type="date" name="fecha_salida" required>
-      <button type="submit">Confirmar reserva</button>
-    `;
-
-    const mensaje = document.getElementById('mensaje-reserva');
-    const error = document.getElementById('error-reserva');
-    mensaje.textContent = '';
-    error.textContent = '';
-
-    contenedor.appendChild(form);
-
-    form.addEventListener('submit', async (e) => {
-      e.preventDefault();
-      const formData = new FormData(form);
-      const datos = Object.fromEntries(formData.entries());
-
-      try {
-        const res = await fetch('/api/reservas', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(datos)
-        });
-
-        if (res.ok) {
-          mensaje.textContent = '¡Reserva confirmada!';
-          form.remove();
-          boton.classList.add('reservada');
-          boton.disabled = true;
-        } else {
-          const err = await res.text();
-          error.textContent = 'Error al reservar: ' + err;
-        }
-      } catch (err) {
-        console.error(err);
-        error.textContent = 'Error al enviar la reserva.';
+      const result = await res.json();
+      if (res.ok) {
+        mensajeDiv.textContent = 'Reserva realizada con éxito.';
+        formulario.reset();
+        formulario.style.display = 'none';
+        await cargarReservas();
+        generarHabitaciones(datos.hotel_id);
+      } else {
+        mensajeDiv.textContent = result.error || 'Error al realizar la reserva.';
       }
     });
-  }
-</script>
 
+    // Inicializar
+    hotelSelect.addEventListener('change', async () => {
+      if (hotelSelect.value) {
+        await cargarReservas();
+        generarHabitaciones(hotelSelect.value);
+      } else {
+        habitacionesDiv.innerHTML = '';
+        formulario.style.display = 'none';
+      }
+    });
+
+    cargarHoteles();
+    cargarReservas();
+  </script>
 </body>
 </html>
