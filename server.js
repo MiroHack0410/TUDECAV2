@@ -1,4 +1,3 @@
-// server.js
 const express = require('express');
 const path = require('path');
 const { Pool } = require('pg');
@@ -6,11 +5,12 @@ const jwt = require('jsonwebtoken');
 const bcrypt = require('bcryptjs');
 const cookieParser = require('cookie-parser');
 const cors = require('cors');
+const session = require('express-session'); // <-- agregado
 require('dotenv').config();
 
 const app = express();
 const PORT = process.env.PORT || 3000;
-const JWT_SECRET = process.env.JWT_SECRET || 'tu_clave_secreta_aqui';
+const JWT_SECRET = process.env.JWT_SECRET || 'yajdielemirbaxinbaez0410';
 
 const pool = new Pool({
   connectionString: process.env.DATABASE_URL,
@@ -26,6 +26,13 @@ app.use(cors({
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
+
+app.use(session({   // <-- agregado middleware sesión
+  secret: 'tu-secreto-super-seguro', // cambia esto
+  resave: false,
+  saveUninitialized: false,
+  cookie: { maxAge: 24 * 60 * 60 * 1000 } // 1 día
+}));
 
 // Archivos estáticos
 app.use(express.static(__dirname));
@@ -100,24 +107,25 @@ agregarColumnas();
   }
 })();
 
-pool.query(`
-  CREATE TABLE IF NOT EXISTS reserva (
-    id SERIAL PRIMARY KEY,
-    nombre_huesped TEXT NOT NULL,
-    correo TEXT NOT NULL,
-    celular TEXT NOT NULL,
-    fecha_inicio DATE NOT NULL,
-    fecha_fin DATE NOT NULL,
-    num_habitacion INTEGER NOT NULL,
-    hotel_id INTEGER REFERENCES hoteles(id)
-  )
-`);
-    console.log('✅ Tablas reserva creada');
+(async () => {  // <-- corregido bloque creación tabla reserva
+  try {
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS reserva (
+        id SERIAL PRIMARY KEY,
+        nombre_huesped TEXT NOT NULL,
+        correo TEXT NOT NULL,
+        celular TEXT NOT NULL,
+        fecha_inicio DATE NOT NULL,
+        fecha_fin DATE NOT NULL,
+        num_habitacion INTEGER NOT NULL,
+        hotel_id INTEGER REFERENCES hoteles(id)
+      );
+    `);
+    console.log('✅ Tabla reserva creada/verificada');
   } catch (error) {
-    console.error('❌ Error al crear tablas:', error);
+    console.error('❌ Error al crear tabla reserva:', error);
   }
 })();
-
 
 // Insertar admin por defecto
 (async () => {
@@ -277,7 +285,7 @@ app.post('/logout', (req, res) => {
         console.error(err);
         return res.status(500).send('Error cerrando sesión');
       }
-      res.clearCookie('connect.sid'); // Ajusta si tu cookie tiene otro nombre
+      res.clearCookie('connect.sid'); // cookie por defecto
       return res.status(200).send('Logout exitoso');
     });
   } else {
@@ -287,26 +295,18 @@ app.post('/logout', (req, res) => {
 
 app.post('/reservar', (req, res) => {
   const { nombre_huesped, correo, celular, fecha_inicio, fecha_fin, num_habitacion, hotel_id } = req.body;
-
+  if (!nombre_huesped || !correo || !celular || !fecha_inicio || !fecha_fin || !num_habitacion || !hotel_id) {
+    return res.status(400).send('Faltan datos');
+  }
   pool.query(
-    'INSERT INTO reserva (nombre_huesped, correo, celular, fecha_inicio, fecha_fin, num_habitacion, hotel_id) VALUES ($1, $2, $3, $4, $5, $6, $7)',
-    [nombre_huesped, correo, celular, fecha_inicio, fecha_fin, num_habitacion, hotel_id],
-    (err, result) => {
-      if (err) {
-        console.error(err);
-        return res.status(500).json({ mensaje: 'Error en la reserva' });
-      }
-      res.json({ mensaje: 'Reserva exitosa' });
-    }
-  );
-});
-
-
-// SPA fallback
-app.get('*', (req, res) => {
-  res.sendFile(path.join(__dirname, 'index.html'));
+    `INSERT INTO reserva (nombre_huesped, correo, celular, fecha_inicio, fecha_fin, num_habitacion, hotel_id)
+    VALUES ($1, $2, $3, $4, $5, $6, $7)`,
+    [nombre_huesped, correo, celular, fecha_inicio, fecha_fin, num_habitacion, hotel_id]
+  )
+  .then(() => res.send('Reserva guardada'))
+  .catch(() => res.status(500).send('Error al guardar reserva'));
 });
 
 app.listen(PORT, () => {
-  console.log(`🚀 Servidor en http://localhost:${PORT}`);
+  console.log(`Servidor escuchando en puerto ${PORT}`);
 });
