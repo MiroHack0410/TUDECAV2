@@ -144,21 +144,21 @@
       }
     }
 
-  .btn-reservar {
-    margin: 10px;
-    padding: 10px 20px;
-    background-color: #4a7946;
-    color: white;
-    border: none;
-    border-radius: 4px;
-    font-weight: bold;
-    cursor: pointer;
-    transition: background-color 0.3s ease;
-  }
+.btn-reservar {
+  margin: 10px 0 10px 0;
+  padding: 10px 20px;
+  background-color: #5a9352; /* Verde que usas en navbar */
+  color: white;
+  border: none;
+  border-radius: 5px;
+  font-weight: bold;
+  cursor: pointer;
+  transition: background-color 0.3s ease;
+}
 
-  .btn-reservar:hover {
-    background-color: #3a6136;
-  }
+.btn-reservar:hover {
+  background-color: #4a7946;
+}
   </style>
 </head>
 <body>
@@ -237,13 +237,17 @@
           const card = document.createElement('div');
           card.className = 'card';
 card.innerHTML = `
-  <img src="${item.imagen_url}" alt="${item.nombre}" onerror="this.src='default.jpg'"/>
+  <img src="${item.imagen_url}" alt="${item.nombre}" onerror="this.src='/Imagenes/default.jpg'"/>
   <h3>${item.nombre}</h3>
-  <div class="estrellas">${'★'.repeat(item.estrellas)}</div>
+  <div class="estrellas">${item.estrellas}</div>
   <p>${item.descripcion}</p>
   <button class="btn-reservar">Reservar</button>
   <small>${item.direccion}</small>
   <div class="mapa">${item.iframe_mapa}</div>
+  <div style="margin-top: 8px;">
+    <button onclick="editarLugar(${item.id})">Editar</button>
+    <button onclick="eliminarLugar(${item.id})">Eliminar</button>
+  </div>
 `;
           listaLugares.appendChild(card);
         });
