@@ -122,6 +122,45 @@ app.post('/crear-tabla-usuariosv2', async (req, res) => {
   }
 })();
 
+async function insertarHoteles(pool) {
+  try {
+    await pool.query(`INSERT INTO hoteles (nombre, estrellas, descripcion, direccion, iframe_mapa, imagen_url) VALUES
+    ('Hotel Playa Cristal', '3 estrellas', 'Hotel frente al lago con vista panorámica.', 'Catemaco, Veracruz', '', ''),
+    ('Hotel Posada Koniapan', '3 estrellas', 'Alojamiento ecológico con acceso al lago.', 'Catemaco, Veracruz', '', ''),
+    ('Hotel La Finca Resort & Spa', '4 estrellas', 'Hotel con spa, piscina y restaurante.', 'Carretera Costera del Golfo Km. 143, Catemaco, Veracruz', '', ''),
+    ('Las Huellas del Caminante', '3 estrellas', 'Posada tranquila rodeada de naturaleza.', 'Catemaco, Veracruz', '', ''),
+    ('Posada Bugambilia', '2 estrellas', 'Alojamiento sencillo y acogedor.', 'Catemaco, Veracruz', '', ''),
+    ('Hotel del Centro', '3 estrellas', 'Ubicación céntrica ideal para conocer Catemaco.', 'Centro, Catemaco, Veracruz', '', ''),
+    ('Hotel Catemaco', '3 estrellas', 'Confortable y cerca del malecón.', 'Malecón, Catemaco, Veracruz', '', ''),
+    ('Hotel del Ángel', '2 estrellas', 'Económico y con excelente atención.', 'Catemaco, Veracruz', '', ''),
+    ('Hotel Juros', '3 estrellas', 'Hotel familiar con jardines tropicales.', 'Catemaco, Veracruz', '', ''),
+    ('Hotel Berthangel', '3 estrellas', 'Agradable y acogedor para descansar.', 'Catemaco, Veracruz', '', ''),
+    ('HOTEL FONSECA ROSBER', '2 estrellas', 'Hotel sencillo y funcional.', 'Catemaco, Veracruz', '', ''),
+    ('Hotel Campestre', '3 estrellas', 'Ubicado en las afueras, rodeado de naturaleza.', 'Catemaco, Veracruz', '', ''),
+    ('Hotel Polymar', '2 estrellas', 'Opciones económicas con servicios esenciales.', 'Catemaco, Veracruz', '', ''),
+    ('Hotel Acuario', '2 estrellas', 'Hotel frente al lago con encanto local.', 'Catemaco, Veracruz', '', ''),
+    ('Hotel San Francisco', '2 estrellas', 'Céntrico y accesible.', 'Catemaco, Veracruz', '', ''),
+    ('Posada Casa de la Abuela', '3 estrellas', 'Posada pintoresca y tradicional.', 'Catemaco, Veracruz', '', ''),
+    ('ESTANCIA MARyAZUL', '3 estrellas', 'Tranquilo refugio junto al lago.', 'Catemaco, Veracruz', '', ''),
+    ('Hotel Monasterio de San Francisco', '4 estrellas', 'Hotel en un antiguo monasterio.', 'Catemaco, Veracruz', '', ''),
+    ('Hotel El Carmen', '3 estrellas', 'Hotel moderno con restaurante y piscina.', 'Catemaco, Veracruz', '', ''),
+    ('Hotel Las Acacias', '2 estrellas', 'Alojamiento familiar cerca del centro.', 'Catemaco, Veracruz', '', ''),
+    ('Hotel Villa Margarita', '3 estrellas', 'Ambiente acogedor rodeado de selva.', 'Catemaco, Veracruz', '', ''),
+    ('Hotel Los Arcos', '2 estrellas', 'Hotel tradicional y tranquilo.', 'Catemaco, Veracruz', '', ''),
+    ('Hotel Quinta San Juan', '3 estrellas', 'Comodidad y buena ubicación.', 'Catemaco, Veracruz', '', ''),
+    ('Hotel del Lago', '3 estrellas', 'Hermosas vistas al lago.', 'Catemaco, Veracruz', '', ''),
+    ('Hotel Doña Juana', '2 estrellas', 'Ambiente familiar y sencillo.', 'Catemaco, Veracruz', '', ''),
+    ('Hotel Boutique Isla del Sol', '4 estrellas', 'Lujo y naturaleza en una sola experiencia.', 'Isla en el Lago de Catemaco', '', ''),
+    ('Cabañas del Bosque', '3 estrellas', 'Hospedaje rústico en medio del bosque.', 'Catemaco, Veracruz', '', ''),
+    ('Hotel Villas Tepetapan', '3 estrellas', 'Espacios amplios y jardín.', 'Catemaco, Veracruz', '', ''),
+    ('Villa Turística de la Campiña', '3 estrellas', 'Complejo rural con todas las comodidades.', 'Catemaco, Veracruz', '', '');`);
+
+    console.log('✅ Hoteles insertados correctamente');
+  } catch (err) {
+    console.error('❌ Error al insertar hoteles:', err);
+  }
+}
+
 // 👥 Registro de turistas
 app.post('/registro', async (req, res) => {
   const { nombre, apellido, telefono, correo, sexo, password } = req.body;
