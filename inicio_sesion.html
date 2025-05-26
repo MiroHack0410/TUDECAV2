@@ -181,34 +181,39 @@
   </main>
 
   <script>
-    // Enviar formulario sin recargar
-    document.getElementById('loginForm').addEventListener('submit', async function(e) {
-      e.preventDefault();
+document.getElementById('loginForm').addEventListener('submit', async function(e) {
+  e.preventDefault();
 
-      const usuario = document.getElementById('correo').value;
-      const password = document.getElementById('contraseña').value;
+  const usuario = document.getElementById('correo').value;
+  const password = document.getElementById('contraseña').value;
 
-      try {
-        const response = await fetch('/login', {
-          method: 'POST',
-          headers: {'Content-Type': 'application/json'},
-          credentials: 'include',
-          body: JSON.stringify({ usuario, password })
-        });
-
-        const data = await response.json();
-
-        if (response.ok && data.mensaje === "Login exitoso") {
-          // Login correcto, recargar la página para actualizar estado
-          window.location.reload();
-        } else {
-          // Mostrar error si falla login
-          document.getElementById('error-message').textContent = data.mensaje || "Correo o contraseña incorrectos";
-        }
-      } catch (error) {
-        document.getElementById('error-message').textContent = "Error de conexión";
-      }
+  try {
+    const response = await fetch('/login', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      credentials: 'include',
+      body: JSON.stringify({ usuario, password })
     });
+
+    const data = await response.json();
+
+    if (response.ok && data.mensaje === "Login exitoso") {
+      // Redirigir según rol
+      if (data.rol === 1) {
+        window.location.href = 'admin.html';
+      } else if (data.rol === 2) {
+        window.location.href = 'index.html';
+      } else {
+        alert('Rol desconocido');
+      }
+    } else {
+      document.getElementById('error-message').textContent = data.mensaje || "Correo o contraseña incorrectos";
+    }
+  } catch (error) {
+    document.getElementById('error-message').textContent = "Error de conexión";
+  }
+});
+
 
     // Al cargar la página, verificamos si hay usuario autenticado para mostrar info o login
     async function checkSession() {
