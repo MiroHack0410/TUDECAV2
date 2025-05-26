@@ -251,6 +251,24 @@ app.delete('/api/:tipo/:id', autenticado, esAdmin, validarTipoLugar, async (req,
   }
 });
 
+app.post('/logout', (req, res) => {
+  // Si usas sesiones (express-session), destrúyela
+  if (req.session) {
+    req.session.destroy(err => {
+      if (err) {
+        console.error(err);
+        return res.status(500).send('Error cerrando sesión');
+      }
+      res.clearCookie('connect.sid'); // Ajusta el nombre si usas otro
+      return res.status(200).send('Logout exitoso');
+    });
+  } else {
+    // Si no usas sesión, solo responde ok
+    res.status(200).send('Logout exitoso');
+  }
+});
+
+
 // SPA fallback
 app.get('*', (req, res) => {
   res.sendFile(path.join(__dirname, 'index.html'));
