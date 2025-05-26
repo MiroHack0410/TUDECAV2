@@ -198,30 +198,34 @@
   </main>
 
   <script>
-document.getElementById('form-login').addEventListener('submit', async (e) => {
-  e.preventDefault();
-  
-  const correo = document.getElementById('correo').value;
-  const contrasena = document.getElementById('contrasena').value;
+    // Manejo del formulario para login sin recarga
+    document.getElementById('loginForm').addEventListener('submit', async function(e) {
+      e.preventDefault(); // evitar recarga
 
-  try {
-    const res = await fetch('/api/login', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ correo, contrasena })
+      const usuario = document.getElementById('correo').value;
+      const password = document.getElementById('contraseña').value;
+
+      try {
+        const response = await fetch('/login', {
+          method: 'POST',
+          headers: {'Content-Type': 'application/json'},
+          credentials: 'include',
+          body: JSON.stringify({ usuario, password })
+        });
+
+        const data = await response.json();
+
+        if (response.ok && data.mensaje === "Login exitoso") {
+          // Login correcto, recargar la página para actualizar estado
+          window.location.reload();
+        } else {
+          // Mostrar error si falla login
+          document.getElementById('error-message').textContent = data.mensaje || "Error en login";
+        }
+      } catch (error) {
+        document.getElementById('error-message').textContent = "Error de conexión";
+      }
     });
-
-    if (res.ok) {
-      const data = await res.json();
-      localStorage.setItem('usuario', JSON.stringify(data)); // GUARDAMOS SESIÓN
-      window.location.href = 'Hotel.html'; // Redirección si quieres
-    } else {
-      alert('Credenciales incorrectas');
-    }
-  } catch (err) {
-    console.error('Error en login:', err);
-  }
-});
 
     // Al cargar la página, verificamos si hay usuario autenticado
     fetch('/perfil', {
@@ -264,4 +268,3 @@ document.getElementById('form-login').addEventListener('submit', async (e) => {
   </script>
 </body>
 </html>
-
