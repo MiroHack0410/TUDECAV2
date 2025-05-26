@@ -151,44 +151,53 @@
     <div id="lista-lugares"></div>
   </main>
 
-  <script>
-    function agregarEventosReserva() {
-  document.querySelectorAll('.btn-reservar').forEach(btn => {
-    btn.addEventListener('click', () => {
-      const hotelId = btn.getAttribute('data-id');
-      localStorage.setItem('hotelSeleccionado', hotelId);
-      window.location.href = 'reservas.html';
+<script>
+  // Esta función añade el evento "click" a todos los botones "Reservar"
+  function agregarEventosReserva() {
+    document.querySelectorAll('.btn-reservar').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const hotelId = btn.getAttribute('data-id');
+        // Guarda el ID del hotel seleccionado en localStorage
+        localStorage.setItem('hotelSeleccionado', hotelId);
+        // Redirige a la página de reservas
+        window.location.href = 'reservas.html';
+      });
     });
-  });
-}
-async function cargarLugares() {
-  try {
-    const res = await fetch('/api/hoteles');
-    const data = await res.json();
-    const contenedor = document.getElementById('lista-lugares');
-    contenedor.innerHTML = '';
-    data.forEach(item => {
-      const card = document.createElement('div');
-      card.className = 'card';
-      card.innerHTML = `
-        <img src="${item.imagen_url}" alt="${item.nombre}" onerror="this.src='/Imagenes/default.jpg'"/>
-        <h3>${item.nombre}</h3>
-        <div class="estrellas">${'★'.repeat(item.estrellas) + '☆'.repeat(5 - item.estrellas)}</div>
-        <p>${item.descripcion}</p>
-        <small>${item.direccion}</small>
-        <div class="mapa">${item.iframe_mapa}</div>
-        <button class="btn-reservar">Reservar</button>
-      `;
-      contenedor.appendChild(card);
-    });
-    agregarEventosReserva();  // <--- Aquí llamas para agregar eventos a los botones
-  } catch(e) {
-    alert('Error al cargar los hoteles.');
-    console.error(e);
   }
-}
 
-cargarLugares();
-  </script>
+  // Esta función carga todos los hoteles desde el backend y los muestra como tarjetas
+  async function cargarLugares() {
+    try {
+      const res = await fetch('/api/hoteles');
+      const data = await res.json();
+      const contenedor = document.getElementById('lista-lugares');
+      contenedor.innerHTML = '';
+
+      data.forEach(item => {
+        const card = document.createElement('div');
+        card.className = 'card';
+        card.innerHTML = `
+          <img src="${item.imagen_url}" alt="${item.nombre}" onerror="this.src='/Imagenes/default.jpg'"/>
+          <h3>${item.nombre}</h3>
+          <div class="estrellas">${'★'.repeat(item.estrellas) + '☆'.repeat(5 - item.estrellas)}</div>
+          <p>${item.descripcion}</p>
+          <small>${item.direccion}</small>
+          <div class="mapa">${item.iframe_mapa}</div>
+          <button class="btn-reservar" data-id="${item.id}">Reservar</button>
+        `;
+        contenedor.appendChild(card);
+      });
+
+      // Se agregan los eventos después de haber generado todas las tarjetas
+      agregarEventosReserva();
+    } catch (e) {
+      alert('Error al cargar los hoteles.');
+      console.error(e);
+    }
+  }
+
+  // Llamamos a la función al cargar la página
+  window.onload = cargarLugares;
+</script>
 </body>
 </html>
