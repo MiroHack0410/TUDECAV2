@@ -4,6 +4,7 @@ const { Pool } = require('pg');
 const jwt = require('jsonwebtoken');
 const bcrypt = require('bcryptjs');
 const cookieParser = require('cookie-parser');
+const cors = require('cors');
 require('dotenv').config();
 
 const app = express();
@@ -14,6 +15,12 @@ const pool = new Pool({
   connectionString: process.env.DATABASE_URL,
   ssl: { rejectUnauthorized: false },
 });
+
+// Configurar CORS (ajusta el origen según tu frontend)
+app.use(cors({
+  origin: 'http://localhost:5173', // Cambia al origen de tu frontend
+  credentials: true,
+}));
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
@@ -69,7 +76,7 @@ app.post('/crear-tabla-usuariosv2', async (req, res) => {
   }
 });
 
-// 👤 Insertar administrador por defecto
+// 👤 Insertar administrador por defecto (si no existe)
 (async () => {
   const adminCorreo = 'admin@tudeca.com';
   const adminPasswordPlano = 'emirbb18';
@@ -134,9 +141,48 @@ app.post('/crear-tabla-usuariosv2', async (req, res) => {
   }
 })();
 
+// Middleware para validar tipo válido y prevenir inyección SQL
+const tablasValidas = {
+  hoteles: 'hoteles',
+  restaurantes: 'restaurantes',
+  puntos_interes: 'puntos_interes',
+};
+function validarTipoLugar(req, res, next) {
+  const { tipo } = req.params;
+  if (!tablasValidas[tipo]) {
+    return res.status(400).send('Tipo inválido');
+  }
+  req.tabla = tablasValidas[tipo]; // asignar tabla segura
+  next();
+}
+
+// Middleware para validar token JWT (autenticación)
+function autenticado(req, res, next) {
+  const token = req.cookies.token;
+  if (!token) return res.status(401).send('No autenticado');
+  try {
+    const userData = jwt.verify(token, JWT_SECRET);
+    req.usuario = userData;
+    next();
+  } catch {
+    return res.status(401).send('Token inválido');
+  }
+}
+
+// Middleware para autorizar solo admin (rol=1)
+function esAdmin(req, res, next) {
+  if (req.usuario?.rol !== 1) {
+    return res.status(403).send('Acceso denegado: solo administradores');
+  }
+  next();
+}
+
 // 👥 Registro de turistas
 app.post('/registro', async (req, res) => {
   const { nombre, apellido, telefono, correo, sexo, password } = req.body;
+  if (!correo || !password) {
+    return res.status(400).send('Correo y contraseña son obligatorios');
+  }
   try {
     const hashedPassword = await bcrypt.hash(password, 10);
     await pool.query(`
@@ -146,6 +192,10 @@ app.post('/registro', async (req, res) => {
     res.send('Usuario registrado exitosamente');
   } catch (err) {
     console.error('Error al registrar turista:', err);
+    if (err.code === '23505') {
+      // código error unique violation
+      return res.status(400).send('El correo ya está registrado');
+    }
     res.status(500).send('Error al registrar usuario');
   }
 });
@@ -153,6 +203,9 @@ app.post('/registro', async (req, res) => {
 // 🔐 Login
 app.post('/login', async (req, res) => {
   const { usuario, password } = req.body;
+  if (!usuario || !password) {
+    return res.status(400).send('Usuario y contraseña son obligatorios');
+  }
 
   try {
     const result = await pool.query('SELECT * FROM usuariosv2 WHERE correo = $1', [usuario]);
@@ -180,15 +233,8 @@ app.post('/login', async (req, res) => {
 });
 
 // 🔍 Obtener usuario autenticado
-app.get('/me', (req, res) => {
-  const token = req.cookies.token;
-  if (!token) return res.status(401).send('No autenticado');
-  try {
-    const userData = jwt.verify(token, JWT_SECRET);
-    res.json(userData);
-  } catch (err) {
-    res.status(401).send('Token inválido');
-  }
+app.get('/me', autenticado, (req, res) => {
+  res.json(req.usuario);
 });
 
 // 🚪 Logout
@@ -197,20 +243,11 @@ app.post('/logout', (req, res) => {
   res.send('Sesión cerrada');
 });
 
-// ✅ Middleware para validar tipo
-function validarTipoLugar(req, res, next) {
-  const { tipo } = req.params;
-  if (!['hoteles', 'restaurantes', 'puntos_interes'].includes(tipo)) {
-    return res.status(400).send('Tipo inválido');
-  }
-  next();
-}
-
-// 📄 Obtener lista de lugares
+// 📄 Obtener lista de lugares (abierto)
 app.get('/api/:tipo', validarTipoLugar, async (req, res) => {
-  const { tipo } = req.params;
+  const tabla = req.tabla;
   try {
-    const result = await pool.query(`SELECT * FROM ${tipo} ORDER BY id DESC`);
+    const result = await pool.query(`SELECT * FROM ${tabla} ORDER BY id DESC`);
     res.json(result.rows);
   } catch (error) {
     console.error('Error al obtener lista:', error);
@@ -218,24 +255,30 @@ app.get('/api/:tipo', validarTipoLugar, async (req, res) => {
   }
 });
 
-// ➕ Insertar lugar
-app.post('/api/:tipo', validarTipoLugar, async (req, res) => {
-  const { tipo } = req.params;
+// ➕ Insertar lugar (solo autenticados)
+app.post('/api/:tipo', autenticado, validarTipoLugar, async (req, res) => {
+  const tabla = req.tabla;
   const { nombre, estrellas, descripcion, direccion, iframe_mapa, imagen_url, num_habitaciones } = req.body;
 
   if (!nombre || !estrellas || !descripcion || !direccion || !iframe_mapa || !imagen_url) {
     return res.status(400).send('Faltan campos obligatorios');
   }
 
+  if (tabla === 'hoteles') {
+    if (num_habitaciones === undefined || isNaN(num_habitaciones) || parseInt(num_habitaciones) < 0) {
+      return res.status(400).send('num_habitaciones debe ser un entero no negativo');
+    }
+  }
+
   try {
-    if (tipo === 'hoteles') {
+    if (tabla === 'hoteles') {
       await pool.query(`
         INSERT INTO hoteles (nombre, estrellas, descripcion, direccion, iframe_mapa, imagen_url, num_habitaciones)
         VALUES ($1, $2, $3, $4, $5, $6, $7)
       `, [nombre, estrellas, descripcion, direccion, iframe_mapa, imagen_url, num_habitaciones]);
     } else {
       await pool.query(`
-        INSERT INTO ${tipo} (nombre, estrellas, descripcion, direccion, iframe_mapa, imagen_url)
+        INSERT INTO ${tabla} (nombre, estrellas, descripcion, direccion, iframe_mapa, imagen_url)
         VALUES ($1, $2, $3, $4, $5, $6)
       `, [nombre, estrellas, descripcion, direccion, iframe_mapa, imagen_url]);
     }
@@ -246,11 +289,15 @@ app.post('/api/:tipo', validarTipoLugar, async (req, res) => {
   }
 });
 
-// ❌ Eliminar lugar
-app.delete('/api/:tipo/:id', validarTipoLugar, async (req, res) => {
-  const { tipo, id } = req.params;
+// ❌ Eliminar lugar (solo admin)
+app.delete('/api/:tipo/:id', autenticado, esAdmin, validarTipoLugar, async (req, res) => {
+  const tabla = req.tabla;
+  const { id } = req.params;
   try {
-    await pool.query(`DELETE FROM ${tipo} WHERE id = $1`, [id]);
+    const result = await pool.query(`DELETE FROM ${tabla} WHERE id = $1`, [id]);
+    if (result.rowCount === 0) {
+      return res.status(404).send('Lugar no encontrado');
+    }
     res.send('Eliminado correctamente');
   } catch (error) {
     console.error('Error al eliminar:', error);
@@ -258,21 +305,38 @@ app.delete('/api/:tipo/:id', validarTipoLugar, async (req, res) => {
   }
 });
 
-// ✏️ Actualizar lugar
-app.put('/api/:tipo/:id', validarTipoLugar, async (req, res) => {
-  const { tipo, id } = req.params;
-  const { nombre, estrellas, descripcion, direccion, iframe_mapa, imagen_url } = req.body;
+// ✏️ Actualizar lugar (solo admin)
+app.put('/api/:tipo/:id', autenticado, esAdmin, validarTipoLugar, async (req, res) => {
+  const tabla = req.tabla;
+  const { id } = req.params;
+  const { nombre, estrellas, descripcion, direccion, iframe_mapa, imagen_url, num_habitaciones } = req.body;
 
   if (!nombre || !estrellas || !descripcion || !direccion || !iframe_mapa || !imagen_url) {
     return res.status(400).send('Faltan campos obligatorios');
   }
 
+  if (tabla === 'hoteles' && (num_habitaciones === undefined || isNaN(num_habitaciones) || parseInt(num_habitaciones) < 0)) {
+    return res.status(400).send('num_habitaciones debe ser un entero no negativo');
+  }
+
   try {
-    await pool.query(`
-      UPDATE ${tipo}
-      SET nombre = $1, estrellas = $2, descripcion = $3, direccion = $4, iframe_mapa = $5, imagen_url = $6
-      WHERE id = $7
-    `, [nombre, estrellas, descripcion, direccion, iframe_mapa, imagen_url, id]);
+    if (tabla === 'hoteles') {
+      const result = await pool.query(`
+        UPDATE hoteles
+        SET nombre = $1, estrellas = $2, descripcion = $3, direccion = $4, iframe_mapa = $5, imagen_url = $6, num_habitaciones = $7
+        WHERE id = $8
+      `, [nombre, estrellas, descripcion, direccion, iframe_mapa, imagen_url, num_habitaciones, id]);
+
+      if (result.rowCount === 0) return res.status(404).send('Lugar no encontrado');
+    } else {
+      const result = await pool.query(`
+        UPDATE ${tabla}
+        SET nombre = $1, estrellas = $2, descripcion = $3, direccion = $4, iframe_mapa = $5, imagen_url = $6
+        WHERE id = $7
+      `, [nombre, estrellas, descripcion, direccion, iframe_mapa, imagen_url, id]);
+
+      if (result.rowCount === 0) return res.status(404).send('Lugar no encontrado');
+    }
     res.send('Actualizado correctamente');
   } catch (error) {
     console.error('Error al actualizar:', error);
