@@ -1,6 +1,3 @@
-// ---------------------------
-// ARCHIVO: server.js (Node.js)
-// ---------------------------
 const express = require('express');
 const path = require('path');
 const { Pool } = require('pg');
@@ -21,7 +18,14 @@ const pool = new Pool({
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
+
+// Sirve archivos estáticos de la raíz (tu frontend, index.html, etc)
 app.use(express.static(__dirname));
+
+// Agrega esta línea para que sirva las imágenes en la ruta /Imagenes
+app.use('/Imagenes', express.static(path.join(__dirname, 'Imagenes')));
+
+// --- El resto de tus rutas y lógica ---
 
 app.post('/crear-tabla-usuariosv2', async (req, res) => {
   try {
@@ -77,7 +81,8 @@ app.post('/crear-tabla-usuariosv2', async (req, res) => {
         estrellas TEXT,
         descripcion TEXT,
         direccion TEXT,
-        iframe_mapa TEXT
+        iframe_mapa TEXT,
+        imagen_url TEXT -- Agregado para la imagen
       );
     `);
 
@@ -88,7 +93,8 @@ app.post('/crear-tabla-usuariosv2', async (req, res) => {
         estrellas TEXT,
         descripcion TEXT,
         direccion TEXT,
-        iframe_mapa TEXT
+        iframe_mapa TEXT,
+        imagen_url TEXT -- Agregado para la imagen
       );
     `);
 
@@ -99,7 +105,8 @@ app.post('/crear-tabla-usuariosv2', async (req, res) => {
         estrellas TEXT,
         descripcion TEXT,
         direccion TEXT,
-        iframe_mapa TEXT
+        iframe_mapa TEXT,
+        imagen_url TEXT -- Agregado para la imagen
       );
     `);
 
@@ -189,17 +196,17 @@ app.get('/api/:tipo', validarTipoLugar, async (req, res) => {
 
 app.post('/api/:tipo', validarTipoLugar, async (req, res) => {
   const { tipo } = req.params;
-  const { nombre, estrellas, descripcion, direccion, iframe_mapa } = req.body;
+  const { nombre, estrellas, descripcion, direccion, iframe_mapa, imagen_url } = req.body;
 
-  if (!nombre || !estrellas || !descripcion || !direccion || !iframe_mapa) {
+  if (!nombre || !estrellas || !descripcion || !direccion || !iframe_mapa || !imagen_url) {
     return res.status(400).send('Faltan campos obligatorios');
   }
 
   try {
     await pool.query(`
-      INSERT INTO ${tipo} (nombre, estrellas, descripcion, direccion, iframe_mapa)
-      VALUES ($1, $2, $3, $4, $5)
-    `, [nombre, estrellas, descripcion, direccion, iframe_mapa]);
+      INSERT INTO ${tipo} (nombre, estrellas, descripcion, direccion, iframe_mapa, imagen_url)
+      VALUES ($1, $2, $3, $4, $5, $6)
+    `, [nombre, estrellas, descripcion, direccion, iframe_mapa, imagen_url]);
     res.send('Insertado correctamente');
   } catch (error) {
     console.error('Error al insertar:', error);
@@ -220,18 +227,18 @@ app.delete('/api/:tipo/:id', validarTipoLugar, async (req, res) => {
 
 app.put('/api/:tipo/:id', validarTipoLugar, async (req, res) => {
   const { tipo, id } = req.params;
-  const { nombre, estrellas, descripcion, direccion, iframe_mapa } = req.body;
+  const { nombre, estrellas, descripcion, direccion, iframe_mapa, imagen_url } = req.body;
 
-  if (!nombre || !estrellas || !descripcion || !direccion || !iframe_mapa) {
+  if (!nombre || !estrellas || !descripcion || !direccion || !iframe_mapa || !imagen_url) {
     return res.status(400).send('Faltan campos obligatorios');
   }
 
   try {
     await pool.query(`
       UPDATE ${tipo}
-      SET nombre = $1, estrellas = $2, descripcion = $3, direccion = $4, iframe_mapa = $5
-      WHERE id = $6
-    `, [nombre, estrellas, descripcion, direccion, iframe_mapa, id]);
+      SET nombre = $1, estrellas = $2, descripcion = $3, direccion = $4, iframe_mapa = $5, imagen_url = $6
+      WHERE id = $7
+    `, [nombre, estrellas, descripcion, direccion, iframe_mapa, imagen_url, id]);
     res.send('Actualizado correctamente');
   } catch (error) {
     console.error('Error al actualizar:', error);
@@ -241,6 +248,10 @@ app.put('/api/:tipo/:id', validarTipoLugar, async (req, res) => {
 
 app.get('*', (req, res) => {
   res.sendFile(path.join(__dirname, 'index.html'));
+});
+
+app.listen(PORT, () => {
+  console.log(`Servidor corriendo en http://localhost:${PORT}`);
 });
 
 app.listen(PORT, () => {
