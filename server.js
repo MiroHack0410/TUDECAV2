@@ -147,6 +147,38 @@ agregarColumnas();
   }
 })();
 
+// Endpoint registro
+app.post('/registro', async (req, res) => {
+  const { nombre, apellido, telefono, correo, sexo, password } = req.body;
+
+  if (!nombre || !apellido || !correo || !password || !sexo) {
+    return res.status(400).json({ success: false, message: 'Faltan datos obligatorios' });
+  }
+
+  try {
+    // Verificar si ya existe el correo
+    const { rowCount } = await pool.query('SELECT 1 FROM usuariosv2 WHERE correo = $1', [correo]);
+    if (rowCount > 0) {
+      return res.status(409).json({ success: false, message: 'El correo ya está registrado' });
+    }
+
+    // Hashear contraseña
+    const hashedPassword = await bcrypt.hash(password, 10);
+
+    // Insertar usuario con rol=2
+    await pool.query(
+      `INSERT INTO usuariosv2 (nombre, apellido, telefono, correo, sexo, password, rol)
+       VALUES ($1, $2, $3, $4, $5, $6, 2)`,
+      [nombre, apellido, telefono || '', correo, sexo, hashedPassword]
+    );
+
+    return res.json({ success: true, message: 'Usuario registrado correctamente' });
+  } catch (error) {
+    console.error('Error en /registro:', error);
+    return res.status(500).json({ success: false, message: 'Error interno del servidor' });
+  }
+});
+
 (async () => {  // <-- corregido bloque creación tabla reserva
   try {
     await pool.query(`
