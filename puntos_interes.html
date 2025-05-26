@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Atracciones - TUDECA</title>
+  <style>
+    /* Copia los mismos estilos que en Hotel.html para navbar y tarjetas */
+    .navbar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background-color: #5a9352;
+      padding: 10px 20px;
+    }
+    .dropdown {
+      position: relative;
+    }
+    .dropbtn {
+      background-color: #4a7946;
+      color: white;
+      padding: 10px;
+      font-size: 16px;
+      border: none;
+      cursor: pointer;
+    }
+    .dropdown-content {
+      display: none;
+      position: absolute;
+      background-color: #2d4729;
+      box-shadow: 0px 8px 16px rgba(0,0,0,0.2);
+      z-index: 1;
+    }
+    .dropdown-content a {
+      color: white;
+      padding: 12px 16px;
+      display: block;
+      text-decoration: none;
+    }
+    .dropdown-content a:hover {
+      background-color: #3e6142;
+    }
+    .dropdown:hover .dropdown-content {
+      display: block;
+    }
+    .title {
+      font-size: 24px;
+      color: white;
+      font-weight: bold;
+    }
+    .signup-btn-link {
+      display: inline-block;
+      background-color: #5a9352;
+      color: white;
+      text-decoration: none;
+      padding: 10px 25px;
+      font-weight: bold;
+      border-radius: 2px;
+    }
+    .signup-btn-link:hover {
+      background-color: #4a7946;
+    }
+    body {
+      font-family: Arial, sans-serif;
+      margin: 0;
+      background-color: #f0f0f0;
+    }
+    #lista-lugares {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 20px;
+      padding: 20px;
+    }
+    .card {
+      background: white;
+      width: 280px;
+      border-radius: 8px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+    }
+    .card img {
+      width: 100%;
+      height: 160px;
+      object-fit: cover;
+    }
+    .card h3 {
+      margin: 10px;
+      font-size: 20px;
+      color: #2c3e50;
+    }
+    .estrellas {
+      margin: 0 10px;
+      color: #e67e22;
+    }
+    .card p {
+      margin: 10px;
+      font-size: 14px;
+      color: #555;
+      flex-grow: 1;
+    }
+    .card small {
+      margin: 10px;
+      color: #777;
+      font-size: 12px;
+    }
+    .mapa {
+      margin: 10px;
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="navbar">
+      <div class="dropdown">
+        <button class="dropbtn">Menú ▼</button>
+        <div class="dropdown-content">
+          <a href="Hotel.html">Hoteles</a>
+          <a href="restaurantes.html">Restaurantes</a>
+          <a href="puntos_interes.html">Atracciones</a>
+        </div>
+      </div>
+      <div href="index.html" class="title">TUDECA</div>
+      <div><a href="index.html" class="signup-btn-link">Inicio</a></div>
+    </div>
+  </header>
+
+  <main>
+    <div id="lista-lugares"></div>
+  </main>
+
+  <script>
+    async function cargarLugares() {
+      try {
+        const res = await fetch('/api/puntos_interes');
+        const data = await res.json();
+        const contenedor = document.getElementById('lista-lugares');
+        contenedor.innerHTML = '';
+        data.forEach(item => {
+          const card = document.createElement('div');
+          card.className = 'card';
+          card.innerHTML = `
+            <img src="${item.imagen_url}" alt="${item.nombre}" onerror="this.src='default.jpg'"/>
+            <h3>${item.nombre}</h3>
+            <div class="estrellas">${'★'.repeat(item.estrellas)}</div>
+            <p>${item.descripcion}</p>
+            <small>${item.direccion}</small>
+            <div class="mapa">${item.iframe_mapa}</div>
+          `;
+          contenedor.appendChild(card);
+        });
+      } catch(e) {
+        alert('Error al cargar las atracciones.');
+        console.error(e);
+      }
+    }
+    cargarLugares();
+  </script>
+</body>
+</html>
