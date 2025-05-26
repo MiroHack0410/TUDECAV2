@@ -392,23 +392,25 @@
     // Inicialización
     actualizarVisibilidadCampos();
     cargarLugares();
+    
+    btnCancel.onclick = () => {
+      limpiarFormulario();
+    };
 
-    app.post('/logout', (req, res) => {
-  // Si usas sesiones (express-session), destrúyela
-  if (req.session) {
-    req.session.destroy(err => {
-      if (err) {
-        console.error(err);
-        return res.status(500).send('Error cerrando sesión');
+    // Manejo del botón "Cerrar Sesión"
+    document.getElementById('logout-btn').onclick = async () => {
+      try {
+        const res = await fetch('/logout', { method: 'POST' });
+        if (res.ok) {
+          alert('Sesión cerrada');
+          window.location.href = '/login'; // Redirige a la página de login (ajústalo según tu ruta)
+        } else {
+          alert('Error al cerrar sesión');
+        }
+      } catch (error) {
+        alert('Error al cerrar sesión: ' + error.message);
       }
-      res.clearCookie('connect.sid'); // Ajusta el nombre si usas otro
-      return res.status(200).send('Logout exitoso');
-    });
-  } else {
-    // Si no usas sesión, solo responde ok
-    res.status(200).send('Logout exitoso');
-  }
-});
+    };
 
   </script>
 </body>
