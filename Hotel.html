@@ -152,12 +152,13 @@
   </main>
 
   <script>
-// Después de cargar las tarjetas
 function agregarEventosReserva() {
   document.querySelectorAll('.btn-reservar').forEach(btn => {
     btn.addEventListener('click', () => {
       const hotelId = btn.getAttribute('data-id');
-      const usuarioLogeado = localStorage.getItem('usuario'); // o como manejes sesión
+      const usuarioLogeado = localStorage.getItem('usuario');
+
+      console.log("¿Usuario logeado?:", usuarioLogeado); // Diagnóstico
 
       if (!usuarioLogeado) {
         window.location.href = 'inicio_sesion.html';
@@ -189,7 +190,7 @@ async function cargarLugares() {
       `;
       contenedor.appendChild(card);
     });
-    agregarEventosReserva();  // <--- Aquí llamas para agregar eventos a los botones
+    agregarEventosReserva();
   } catch(e) {
     alert('Error al cargar los hoteles.');
     console.error(e);
