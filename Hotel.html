@@ -152,23 +152,9 @@
   </main>
 
   <script>
-function agregarEventosReserva() {
-  document.querySelectorAll('.btn-reservar').forEach(btn => {
-    btn.addEventListener('click', () => {
-      const hotelId = btn.getAttribute('data-id');
-      const usuarioLogeado = localStorage.getItem('usuario');
-
-      console.log("¿Usuario logeado?:", usuarioLogeado); // Diagnóstico
-
-      if (!usuarioLogeado) {
-        window.location.href = 'inicio_sesion.html';
-      } else {
-        localStorage.setItem('hotelSeleccionado', hotelId);
-        window.location.href = 'reservas.html';
-      }
-    });
+  document.getElementById('btn-reservar').addEventListener('click', () => {
+    window.location.href = 'reservas.html';
   });
-}
 
 async function cargarLugares() {
   try {
@@ -186,7 +172,7 @@ async function cargarLugares() {
         <p>${item.descripcion}</p>
         <small>${item.direccion}</small>
         <div class="mapa">${item.iframe_mapa}</div>
-        <button class="btn-reservar" data-id="${item.id}">Reservar</button>
+        <button class="btn-reservar">Reservar</button>
       `;
       contenedor.appendChild(card);
     });
