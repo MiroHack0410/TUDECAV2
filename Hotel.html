@@ -160,7 +160,7 @@ function agregarEventosReserva() {
       const usuarioLogeado = localStorage.getItem('usuario'); // o como manejes sesión
 
       if (!usuarioLogeado) {
-        window.location.href = 'iniciar_sesion.html';
+        window.location.href = 'inicio_sesion.html';
       } else {
         localStorage.setItem('hotelSeleccionado', hotelId);
         window.location.href = 'reservas.html';
