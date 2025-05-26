@@ -198,6 +198,35 @@
   </main>
 
   <script>
+    // Manejo del formulario para login sin recarga
+    document.getElementById('loginForm').addEventListener('submit', async function(e) {
+      e.preventDefault(); // evitar recarga
+
+      const usuario = document.getElementById('correo').value;
+      const password = document.getElementById('contraseña').value;
+
+      try {
+        const response = await fetch('/login', {
+          method: 'POST',
+          headers: {'Content-Type': 'application/json'},
+          credentials: 'include',
+          body: JSON.stringify({ usuario, password })
+        });
+
+        const data = await response.json();
+
+        if (response.ok && data.mensaje === "Login exitoso") {
+          // Login correcto, recargar la página para actualizar estado
+          window.location.reload();
+        } else {
+          // Mostrar error si falla login
+          document.getElementById('error-message').textContent = data.mensaje || "Error en login";
+        }
+      } catch (error) {
+        document.getElementById('error-message').textContent = "Error de conexión";
+      }
+    });
+
     // Al cargar la página, verificamos si hay usuario autenticado
     fetch('/perfil', {
       credentials: 'include' // Enviar cookies / tokens
@@ -239,3 +268,4 @@
   </script>
 </body>
 </html>
+
