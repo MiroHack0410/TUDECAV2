@@ -393,5 +393,20 @@
     actualizarVisibilidadCampos();
     cargarLugares();
   </script>
+  
+  document.getElementById('logout-btn').addEventListener('click', async () => {
+  try {
+    const res = await fetch('/logout', { method: 'POST' });
+    if (res.ok) {
+      // Redirigir a index.html tras logout exitoso
+      window.location.href = 'index.html';
+    } else {
+      alert('Error al cerrar sesión');
+    }
+  } catch (error) {
+    alert('Error al cerrar sesión: ' + error.message);
+  }
+});
+
 </body>
 </html>
