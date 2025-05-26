@@ -351,12 +351,12 @@
       const lugar = { nombre, estrellas, descripcion, direccion, iframe_mapa, imagen_url };
 
       if (tipoActual === 'hoteles') {
-        const numHabitaciones = parseInt(inputNumHabitaciones.value.trim());
-        if (isNaN(numHabitaciones) || numHabitaciones < 1) {
-          alert('Por favor ingresa un número válido de habitaciones.');
+        const num_habitaciones = inputNumHabitaciones.value.trim();
+        if (!num_habitaciones || isNaN(num_habitaciones) || parseInt(num_habitaciones) < 1) {
+          alert('Ingresa un número válido de habitaciones');
           return;
         }
-        lugar.num_habitaciones = numHabitaciones;
+        lugar.num_habitaciones = parseInt(num_habitaciones);
       }
 
       try {
@@ -366,14 +366,14 @@
           res = await fetch(`/api/${tipoActual}/${id}`, {
             method: 'PUT',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(lugar)
+            body: JSON.stringify(lugar),
           });
         } else {
-          // Crear
+          // Agregar
           res = await fetch(`/api/${tipoActual}`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(lugar)
+            body: JSON.stringify(lugar),
           });
         }
         if (!res.ok) throw new Error('Error al guardar lugar');
@@ -381,7 +381,7 @@
         limpiarFormulario();
         cargarLugares();
       } catch (error) {
-        alert('Error al guardar lugar: ' + error.message);
+        alert('Error: ' + error.message);
       }
     };
 
@@ -389,10 +389,9 @@
       limpiarFormulario();
     };
 
-    // Inicializar
+    // Inicialización
     actualizarVisibilidadCampos();
     cargarLugares();
-
   </script>
 </body>
 </html>
