@@ -252,11 +252,19 @@ app.delete('/api/:tipo/:id', autenticado, esAdmin, validarTipoLugar, async (req,
 });
 
 app.post('/logout', (req, res) => {
-  res.clearCookie('token', { httpOnly: true, sameSite: 'lax' });
-  res.status(200).send('Logout exitoso');
+  if (req.session) {
+    req.session.destroy(err => {
+      if (err) {
+        console.error(err);
+        return res.status(500).send('Error cerrando sesión');
+      }
+      res.clearCookie('connect.sid'); // Ajusta si tu cookie tiene otro nombre
+      return res.status(200).send('Logout exitoso');
+    });
+  } else {
+    res.status(200).send('Logout exitoso');
+  }
 });
-
-
 
 // SPA fallback
 app.get('*', (req, res) => {
