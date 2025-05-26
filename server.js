@@ -22,11 +22,10 @@ app.use(cookieParser());
 // Sirve archivos estáticos de la raíz (tu frontend, index.html, etc)
 app.use(express.static(__dirname));
 
-// Agrega esta línea para que sirva las imágenes en la ruta /Imagenes
+// Sirve imágenes desde la carpeta /Imagenes
 app.use('/Imagenes', express.static(path.join(__dirname, 'Imagenes')));
 
-// --- El resto de tus rutas y lógica ---
-
+// --- Crear tabla usuariosv2 ---
 app.post('/crear-tabla-usuariosv2', async (req, res) => {
   try {
     await pool.query(`
@@ -48,6 +47,7 @@ app.post('/crear-tabla-usuariosv2', async (req, res) => {
   }
 });
 
+// Insertar administrador si no existe
 (async () => {
   const adminCorreo = 'admin@tudeca.com';
   const adminPasswordPlano = 'emirbb18';
@@ -72,6 +72,7 @@ app.post('/crear-tabla-usuariosv2', async (req, res) => {
   }
 })();
 
+// Crear tablas hoteles, restaurantes y puntos_interes
 (async () => {
   try {
     await pool.query(`
@@ -82,7 +83,7 @@ app.post('/crear-tabla-usuariosv2', async (req, res) => {
         descripcion TEXT,
         direccion TEXT,
         iframe_mapa TEXT,
-        imagen_url TEXT -- Agregado para la imagen
+        imagen_url TEXT
       );
     `);
 
@@ -94,7 +95,7 @@ app.post('/crear-tabla-usuariosv2', async (req, res) => {
         descripcion TEXT,
         direccion TEXT,
         iframe_mapa TEXT,
-        imagen_url TEXT -- Agregado para la imagen
+        imagen_url TEXT
       );
     `);
 
@@ -106,7 +107,7 @@ app.post('/crear-tabla-usuariosv2', async (req, res) => {
         descripcion TEXT,
         direccion TEXT,
         iframe_mapa TEXT,
-        imagen_url TEXT -- Agregado para la imagen
+        imagen_url TEXT
       );
     `);
 
@@ -116,6 +117,7 @@ app.post('/crear-tabla-usuariosv2', async (req, res) => {
   }
 })();
 
+// Registro de usuarios
 app.post('/registro', async (req, res) => {
   const { nombre, apellido, telefono, correo, sexo, password } = req.body;
   try {
@@ -131,6 +133,7 @@ app.post('/registro', async (req, res) => {
   }
 });
 
+// Login
 app.post('/login', async (req, res) => {
   const { usuario, password } = req.body;
 
@@ -159,6 +162,7 @@ app.post('/login', async (req, res) => {
   }
 });
 
+// Obtener datos del usuario autenticado
 app.get('/me', (req, res) => {
   const token = req.cookies.token;
   if (!token) return res.status(401).send('No autenticado');
@@ -170,11 +174,13 @@ app.get('/me', (req, res) => {
   }
 });
 
+// Logout
 app.post('/logout', (req, res) => {
   res.clearCookie('token');
   res.send('Sesión cerrada');
 });
 
+// Middleware para validar tipo de lugar
 function validarTipoLugar(req, res, next) {
   const { tipo } = req.params;
   if (!['hoteles', 'restaurantes', 'puntos_interes'].includes(tipo)) {
@@ -183,6 +189,7 @@ function validarTipoLugar(req, res, next) {
   next();
 }
 
+// Obtener lista de lugares
 app.get('/api/:tipo', validarTipoLugar, async (req, res) => {
   const { tipo } = req.params;
   try {
@@ -194,6 +201,7 @@ app.get('/api/:tipo', validarTipoLugar, async (req, res) => {
   }
 });
 
+// Insertar lugar
 app.post('/api/:tipo', validarTipoLugar, async (req, res) => {
   const { tipo } = req.params;
   const { nombre, estrellas, descripcion, direccion, iframe_mapa, imagen_url } = req.body;
@@ -214,6 +222,7 @@ app.post('/api/:tipo', validarTipoLugar, async (req, res) => {
   }
 });
 
+// Eliminar lugar
 app.delete('/api/:tipo/:id', validarTipoLugar, async (req, res) => {
   const { tipo, id } = req.params;
   try {
@@ -225,6 +234,7 @@ app.delete('/api/:tipo/:id', validarTipoLugar, async (req, res) => {
   }
 });
 
+// Actualizar lugar
 app.put('/api/:tipo/:id', validarTipoLugar, async (req, res) => {
   const { tipo, id } = req.params;
   const { nombre, estrellas, descripcion, direccion, iframe_mapa, imagen_url } = req.body;
@@ -246,14 +256,12 @@ app.put('/api/:tipo/:id', validarTipoLugar, async (req, res) => {
   }
 });
 
+// Para cualquier otra ruta, servir el index.html (SPA)
 app.get('*', (req, res) => {
   res.sendFile(path.join(__dirname, 'index.html'));
 });
 
+// Aquí solo UNA vez, inicia el servidor
 app.listen(PORT, () => {
   console.log(`Servidor corriendo en http://localhost:${PORT}`);
 });
-
-app.listen(PORT, () => {
-  console.log(`Servidor corriendo en http://localhost:${PORT}`);
-})
