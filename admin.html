@@ -392,21 +392,24 @@
     // Inicialización
     actualizarVisibilidadCampos();
     cargarLugares();
-  </script>
-  
-  document.getElementById('logout-btn').addEventListener('click', async () => {
-  try {
-    const res = await fetch('/logout', { method: 'POST' });
-    if (res.ok) {
-      // Redirigir a index.html tras logout exitoso
-      window.location.href = 'index.html';
-    } else {
-      alert('Error al cerrar sesión');
-    }
-  } catch (error) {
-    alert('Error al cerrar sesión: ' + error.message);
+
+    app.post('/logout', (req, res) => {
+  // Si usas sesiones (express-session), destrúyela
+  if (req.session) {
+    req.session.destroy(err => {
+      if (err) {
+        console.error(err);
+        return res.status(500).send('Error cerrando sesión');
+      }
+      res.clearCookie('connect.sid'); // Ajusta el nombre si usas otro
+      return res.status(200).send('Logout exitoso');
+    });
+  } else {
+    // Si no usas sesión, solo responde ok
+    res.status(200).send('Logout exitoso');
   }
 });
 
+  </script>
 </body>
 </html>
