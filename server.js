@@ -100,6 +100,25 @@ agregarColumnas();
   }
 })();
 
+pool.query(`
+  CREATE TABLE IF NOT EXISTS reserva (
+    id SERIAL PRIMARY KEY,
+    nombre_huesped TEXT NOT NULL,
+    correo TEXT NOT NULL,
+    celular TEXT NOT NULL,
+    fecha_inicio DATE NOT NULL,
+    fecha_fin DATE NOT NULL,
+    num_habitacion INTEGER NOT NULL,
+    hotel_id INTEGER REFERENCES hoteles(id)
+  )
+`);
+    console.log('✅ Tablas reserva creada');
+  } catch (error) {
+    console.error('❌ Error al crear tablas:', error);
+  }
+})();
+
+
 // Insertar admin por defecto
 (async () => {
   const correo = 'admin@tudeca.com';
@@ -265,6 +284,23 @@ app.post('/logout', (req, res) => {
     res.status(200).send('Logout exitoso');
   }
 });
+
+app.post('/reservar', (req, res) => {
+  const { nombre_huesped, correo, celular, fecha_inicio, fecha_fin, num_habitacion, hotel_id } = req.body;
+
+  pool.query(
+    'INSERT INTO reserva (nombre_huesped, correo, celular, fecha_inicio, fecha_fin, num_habitacion, hotel_id) VALUES ($1, $2, $3, $4, $5, $6, $7)',
+    [nombre_huesped, correo, celular, fecha_inicio, fecha_fin, num_habitacion, hotel_id],
+    (err, result) => {
+      if (err) {
+        console.error(err);
+        return res.status(500).json({ mensaje: 'Error en la reserva' });
+      }
+      res.json({ mensaje: 'Reserva exitosa' });
+    }
+  );
+});
+
 
 // SPA fallback
 app.get('*', (req, res) => {
