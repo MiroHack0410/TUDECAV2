@@ -36,6 +36,17 @@ async function agregarColumnasImagen() {
 }
 agregarColumnasImagen();
 
+// 🔧 Agregar columna num_habitaciones si no existe
+async function agregarColumnaNumHabitaciones() {
+  try {
+    await pool.query(`ALTER TABLE hoteles ADD COLUMN IF NOT EXISTS num_habitaciones INTEGER;`);
+    console.log('✅ Columna num_habitaciones agregada o ya existía');
+  } catch (error) {
+    console.error('❌ Error al agregar columna num_habitaciones:', error);
+  }
+}
+agregarColumnaNumHabitaciones();
+
 // 🧱 Crear tabla usuariosv2 si no existe
 app.post('/crear-tabla-usuariosv2', async (req, res) => {
   try {
@@ -91,7 +102,8 @@ app.post('/crear-tabla-usuariosv2', async (req, res) => {
         descripcion TEXT,
         direccion TEXT,
         iframe_mapa TEXT,
-        imagen_url TEXT
+        imagen_url TEXT,
+        num_habitaciones INTEGER
       );
     `);
     await pool.query(`
@@ -121,17 +133,6 @@ app.post('/crear-tabla-usuariosv2', async (req, res) => {
     console.error('❌ Error al crear tablas:', err);
   }
 })();
-
-// 🔧 Agregar columna num_habitaciones si no existe
-async function agregarColumnaNumHabitaciones() {
-  try {
-    await pool.query(`ALTER TABLE hoteles ADD COLUMN IF NOT EXISTS num_habitaciones INTEGER;`);
-    console.log('✅ Columna num_habitaciones agregada o ya existía');
-  } catch (error) {
-    console.error('❌ Error al agregar columna num_habitaciones:', error);
-  }
-}
-agregarColumnaNumHabitaciones();
 
 // 👥 Registro de turistas
 app.post('/registro', async (req, res) => {
@@ -220,17 +221,24 @@ app.get('/api/:tipo', validarTipoLugar, async (req, res) => {
 // ➕ Insertar lugar
 app.post('/api/:tipo', validarTipoLugar, async (req, res) => {
   const { tipo } = req.params;
-  const { nombre, estrellas, descripcion, direccion, iframe_mapa, imagen_url } = req.body;
+  const { nombre, estrellas, descripcion, direccion, iframe_mapa, imagen_url, num_habitaciones } = req.body;
 
   if (!nombre || !estrellas || !descripcion || !direccion || !iframe_mapa || !imagen_url) {
     return res.status(400).send('Faltan campos obligatorios');
   }
 
   try {
-    await pool.query(`
-      INSERT INTO ${tipo} (nombre, estrellas, descripcion, direccion, iframe_mapa, imagen_url)
-      VALUES ($1, $2, $3, $4, $5, $6)
-    `, [nombre, estrellas, descripcion, direccion, iframe_mapa, imagen_url]);
+    if (tipo === 'hoteles') {
+      await pool.query(`
+        INSERT INTO hoteles (nombre, estrellas, descripcion, direccion, iframe_mapa, imagen_url, num_habitaciones)
+        VALUES ($1, $2, $3, $4, $5, $6, $7)
+      `, [nombre, estrellas, descripcion, direccion, iframe_mapa, imagen_url, num_habitaciones]);
+    } else {
+      await pool.query(`
+        INSERT INTO ${tipo} (nombre, estrellas, descripcion, direccion, iframe_mapa, imagen_url)
+        VALUES ($1, $2, $3, $4, $5, $6)
+      `, [nombre, estrellas, descripcion, direccion, iframe_mapa, imagen_url]);
+    }
     res.send('Insertado correctamente');
   } catch (error) {
     console.error('Error al insertar:', error);
