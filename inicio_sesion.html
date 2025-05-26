@@ -198,6 +198,36 @@
   </main>
 
   <script>
+      const form = document.getElementById('formulario-login');
+
+  form.addEventListener('submit', async (e) => {
+    e.preventDefault();
+
+    const correo = document.getElementById('correo').value;
+    const contrasena = document.getElementById('contrasena').value;
+
+    try {
+      const response = await fetch('/iniciar-sesion', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ correo, contrasena })
+      });
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        alert(errorText);
+        return;
+      }
+
+      const data = await response.json();
+      window.location.href = data.redireccion;
+
+    } catch (err) {
+      console.error('Error en login:', err);
+      alert('Error en la conexión');
+    }
+  });
+    
     // Manejo del formulario para login sin recarga
     document.getElementById('loginForm').addEventListener('submit', async function(e) {
       e.preventDefault(); // evitar recarga
