@@ -122,6 +122,17 @@ app.post('/crear-tabla-usuariosv2', async (req, res) => {
   }
 })();
 
+// 🔧 Agregar columna num_habitaciones si no existe
+async function agregarColumnaNumHabitaciones() {
+  try {
+    await pool.query(`ALTER TABLE hoteles ADD COLUMN IF NOT EXISTS num_habitaciones INTEGER;`);
+    console.log('✅ Columna num_habitaciones agregada o ya existía');
+  } catch (error) {
+    console.error('❌ Error al agregar columna num_habitaciones:', error);
+  }
+}
+agregarColumnaNumHabitaciones();
+
 // 👥 Registro de turistas
 app.post('/registro', async (req, res) => {
   const { nombre, apellido, telefono, correo, sexo, password } = req.body;
