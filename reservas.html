@@ -11,7 +11,6 @@
       padding: 0;
     }
 
-    /* HEADER PERSONALIZADO */
     .navbar {
       display: flex;
       justify-content: space-between;
@@ -75,28 +74,25 @@
       padding: 0 20px;
     }
 
-    .hotel-card {
-      background: white;
-      box-shadow: 0 0 5px rgba(0,0,0,0.1);
-      margin-bottom: 20px;
-      padding: 15px;
-      border-radius: 5px;
-    }
-
-    .btn-reservar, .btn-habitacion {
+    .btn-habitacion {
       background-color: #256028;
       color: white;
       border: none;
       padding: 8px 15px;
-      margin-top: 10px;
+      margin: 5px;
       cursor: pointer;
       border-radius: 3px;
       font-weight: bold;
       transition: background-color 0.3s ease;
     }
 
-    .btn-reservar:hover, .btn-habitacion:hover {
+    .btn-habitacion:hover {
       background-color: #1d4c21;
+    }
+
+    .btn-habitacion.reservada {
+      background-color: red;
+      cursor: not-allowed;
     }
 
     #form-reserva {
@@ -105,7 +101,6 @@
       margin-top: 15px;
       border-radius: 5px;
       box-shadow: 0 0 5px rgba(0,0,0,0.1);
-      display: none;
       max-width: 400px;
     }
 
@@ -172,39 +167,13 @@
 </header>
 
 <main>
-  <div id="hoteles-list"></div>
-  <div id="habitaciones-container"></div>
-
-  <form id="form-reserva">
-    <h3>Formulario de Reserva</h3>
-    <input type="hidden" id="hotel-id" />
-    <input type="hidden" id="habitacion-numero" />
-    <label for="nombre-huesped">Nombre del huésped:</label>
-    <input type="text" id="nombre-huesped" required />
-    <label for="correo-huesped">Correo:</label>
-    <input type="email" id="correo-huesped" required />
-    <label for="celular-huesped">Celular:</label>
-    <input type="tel" id="celular-huesped" required />
-    <label for="fecha-inicio">Fecha de inicio:</label>
-    <input type="date" id="fecha-inicio" required />
-    <label for="fecha-fin">Fecha de fin:</label>
-    <input type="date" id="fecha-fin" required />
-    <button type="submit">Reservar</button>
-    <div id="mensaje-reserva"></div>
-    <div id="error-reserva"></div>
-  </form>
+  <div id="contenedor-reserva"></div>
+  <div id="mensaje-reserva"></div>
+  <div id="error-reserva"></div>
 </main>
 
 <script>
   document.addEventListener('DOMContentLoaded', async () => {
-    // 1. Verificación de sesión
-    const usuario = localStorage.getItem('usuario'); // Puedes ajustar la clave según cómo guardas el login
-    if (!usuario) {
-      window.location.href = 'iniciar_sesion.html';
-      return;
-    }
-
-    // 2. Obtener el hotel seleccionado
     const hotelId = localStorage.getItem('hotelSeleccionado');
     if (!hotelId) {
       alert('No se ha seleccionado un hotel.');
@@ -215,7 +184,6 @@
     const contenedor = document.getElementById('contenedor-reserva');
 
     try {
-      // 3. Obtener habitaciones disponibles
       const res = await fetch(`/api/habitaciones/${hotelId}`);
       const habitaciones = await res.json();
 
@@ -231,7 +199,8 @@
       habitaciones.forEach(hab => {
         const btn = document.createElement('button');
         btn.textContent = `Habitación ${hab.numero}`;
-        btn.addEventListener('click', () => mostrarFormularioReserva(hotelId, hab.numero));
+        btn.className = 'btn-habitacion';
+        btn.addEventListener('click', () => mostrarFormularioReserva(hotelId, hab.numero, btn));
         lista.appendChild(btn);
       });
 
@@ -243,31 +212,37 @@
     }
   });
 
-  // 4. Mostrar formulario de reserva al seleccionar habitación
-  function mostrarFormularioReserva(hotelId, numeroHabitacion) {
+  function mostrarFormularioReserva(hotelId, numeroHabitacion, boton) {
     const contenedor = document.getElementById('contenedor-reserva');
-    contenedor.innerHTML = `
-      <h2>Reservar Habitación ${numeroHabitacion}</h2>
-      <form id="form-reserva">
-        <input type="hidden" name="hotel_id" value="${hotelId}">
-        <input type="hidden" name="numero_habitacion" value="${numeroHabitacion}">
-        <label>Nombre del huésped:</label>
-        <input type="text" name="nombre_huesped" required><br>
-        <label>Correo electrónico:</label>
-        <input type="email" name="correo" required><br>
-        <label>Celular:</label>
-        <input type="tel" name="celular" required><br>
-        <label>Fecha de entrada:</label>
-        <input type="date" name="fecha_entrada" required><br>
-        <label>Fecha de salida:</label>
-        <input type="date" name="fecha_salida" required><br>
-        <button type="submit">Confirmar reserva</button>
-      </form>
+    const form = document.createElement('form');
+    form.id = 'form-reserva';
+    form.innerHTML = `
+      <h3>Reservar Habitación ${numeroHabitacion}</h3>
+      <input type="hidden" name="hotel_id" value="${hotelId}">
+      <input type="hidden" name="numero_habitacion" value="${numeroHabitacion}">
+      <label>Nombre del huésped:</label>
+      <input type="text" name="nombre_huesped" required>
+      <label>Correo electrónico:</label>
+      <input type="email" name="correo" required>
+      <label>Celular:</label>
+      <input type="tel" name="celular" required>
+      <label>Fecha de entrada:</label>
+      <input type="date" name="fecha_entrada" required>
+      <label>Fecha de salida:</label>
+      <input type="date" name="fecha_salida" required>
+      <button type="submit">Confirmar reserva</button>
     `;
 
-    document.getElementById('form-reserva').addEventListener('submit', async (e) => {
+    const mensaje = document.getElementById('mensaje-reserva');
+    const error = document.getElementById('error-reserva');
+    mensaje.textContent = '';
+    error.textContent = '';
+
+    contenedor.appendChild(form);
+
+    form.addEventListener('submit', async (e) => {
       e.preventDefault();
-      const formData = new FormData(e.target);
+      const formData = new FormData(form);
       const datos = Object.fromEntries(formData.entries());
 
       try {
@@ -278,15 +253,17 @@
         });
 
         if (res.ok) {
-          alert('¡Reserva confirmada!');
-          window.location.href = 'index.html';
+          mensaje.textContent = '¡Reserva confirmada!';
+          form.remove();
+          boton.classList.add('reservada');
+          boton.disabled = true;
         } else {
           const err = await res.text();
-          alert('Error al reservar: ' + err);
+          error.textContent = 'Error al reservar: ' + err;
         }
-      } catch (error) {
-        console.error(error);
-        alert('Error al enviar reserva.');
+      } catch (err) {
+        console.error(err);
+        error.textContent = 'Error al enviar la reserva.';
       }
     });
   }
