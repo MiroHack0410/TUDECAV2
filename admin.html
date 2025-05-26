@@ -147,13 +147,15 @@
 .btn-reservar {
   margin: 10px 0 10px 0;
   padding: 10px 20px;
-  background-color: #5a9352; /* Verde que usas en navbar */
+  background-color: #5a9352; /* Verde navbar */
   color: white;
   border: none;
   border-radius: 5px;
   font-weight: bold;
   cursor: pointer;
   transition: background-color 0.3s ease;
+  width: 100%;
+  text-align: center;
 }
 
 .btn-reservar:hover {
@@ -241,9 +243,9 @@ card.innerHTML = `
   <h3>${item.nombre}</h3>
   <div class="estrellas">${item.estrellas}</div>
   <p>${item.descripcion}</p>
-  <button class="btn-reservar">Reservar</button>
   <small>${item.direccion}</small>
   <div class="mapa">${item.iframe_mapa}</div>
+  <button class="btn-reservar">Reservar</button>
   <div style="margin-top: 8px;">
     <button onclick="editarLugar(${item.id})">Editar</button>
     <button onclick="eliminarLugar(${item.id})">Eliminar</button>
