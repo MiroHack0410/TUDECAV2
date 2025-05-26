@@ -288,6 +288,23 @@ app.get('/api/:tipo', validarTipoLugar, async (req, res) => {
   }
 });
 
+// Obtener habitaciones reservadas para un hotel específico
+app.get('/api/habitaciones/:hotelId', async (req, res) => {
+  const hotelId = req.params.hotelId;
+  try {
+    const result = await pool.query(
+      `SELECT num_habitacion FROM reserva WHERE hotel_id = $1`,
+      [hotelId]
+    );
+    const habitacionesReservadas = result.rows.map(row => row.num_habitacion);
+    res.json(habitacionesReservadas);
+  } catch (error) {
+    console.error('Error al obtener habitaciones reservadas:', error);
+    res.status(500).send('Error interno del servidor');
+  }
+});
+
+
 app.get('/api/:tipo/:id', validarTipoLugar, async (req, res) => {
   try {
     const result = await pool.query(`SELECT * FROM ${req.tabla} WHERE id = $1`, [req.params.id]);
