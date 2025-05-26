@@ -403,7 +403,7 @@
         const res = await fetch('/logout', { method: 'POST' });
         if (res.ok) {
           alert('Sesión cerrada');
-          window.location.href = '/login'; // Redirige a la página de login (ajústalo según tu ruta)
+          window.location.href = 'index.html'; // Redirige a la página de login (ajústalo según tu ruta)
         } else {
           alert('Error al cerrar sesión');
         }
