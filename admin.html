@@ -63,7 +63,7 @@
       display: block;
       margin-top: 10px;
     }
-    input[type=text], textarea, select {
+    input[type=text], textarea, select, input[type=number] {
       width: 100%;
       padding: 8px;
       margin-top: 4px;
@@ -191,6 +191,18 @@
       <textarea id="iframe_mapa" rows="2" required></textarea>
       <label for="imagen_url">URL Imagen (ej. /Imagenes/hotel.jpg)</label>
       <input type="text" id="imagen_url" placeholder="/Imagenes/hotel.jpg" required />
+
+      <!-- Campo para número de habitaciones, oculto por defecto -->
+      <label for="num_habitaciones" id="label-num-habitaciones" style="display:none; margin-top:10px;">
+        Número de habitaciones
+      </label>
+      <input
+        type="number"
+        id="num_habitaciones"
+        min="1"
+        style="display:none; padding:8px; border:1px solid #aaa; border-radius:4px; box-sizing:border-box;"
+      />
+
       <button type="submit" id="btn-submit">Agregar</button>
       <button type="button" id="btn-cancel" style="display:none; margin-left:10px;">Cancelar</button>
     </form>
@@ -207,12 +219,28 @@
     const btnSubmit = document.getElementById('btn-submit');
     const btnCancel = document.getElementById('btn-cancel');
 
+    // Nuevos elementos para num_habitaciones
+    const labelNumHabitaciones = document.getElementById('label-num-habitaciones');
+    const inputNumHabitaciones = document.getElementById('num_habitaciones');
+
     function limpiarFormulario() {
       formLugar.reset();
       document.getElementById('id-lugar').value = '';
       btnSubmit.textContent = 'Agregar';
       document.getElementById('form-title').textContent = 'Agregar lugar';
       btnCancel.style.display = 'none';
+      inputNumHabitaciones.value = '';
+    }
+
+    function actualizarVisibilidadCampos() {
+      if (tipoActual === 'hoteles') {
+        labelNumHabitaciones.style.display = 'block';
+        inputNumHabitaciones.style.display = 'block';
+      } else {
+        labelNumHabitaciones.style.display = 'none';
+        inputNumHabitaciones.style.display = 'none';
+        inputNumHabitaciones.value = '';
+      }
     }
 
     function llenarFormulario(lugar) {
@@ -226,6 +254,12 @@
       btnSubmit.textContent = 'Actualizar';
       document.getElementById('form-title').textContent = 'Editar lugar';
       btnCancel.style.display = 'inline-block';
+
+      if (tipoActual === 'hoteles') {
+        inputNumHabitaciones.value = lugar.num_habitaciones || '';
+      } else {
+        inputNumHabitaciones.value = '';
+      }
     }
 
     async function cargarLugares() {
@@ -244,57 +278,86 @@
             <p>${item.descripcion}</p>
             <small>${item.direccion}</small>
             <div class="mapa">${item.iframe_mapa}</div>
-            <div style="margin-top: 8px;">
-              <button onclick="editarLugar(${item.id})">Editar</button>
-              <button onclick="eliminarLugar(${item.id})">Eliminar</button>
-            </div>
+            ${tipoActual === 'hoteles' ? `<p><strong>Habitaciones:</strong> ${item.num_habitaciones}</p>` : ''}
+            <button class="btn-editar" data-id="${item.id}">Editar</button>
+            <button class="btn-eliminar" data-id="${item.id}">Eliminar</button>
           `;
           listaLugares.appendChild(card);
         });
+
+        // Añadir event listeners a botones de editar y eliminar
+        document.querySelectorAll('.btn-editar').forEach(btn => {
+          btn.onclick = async () => {
+            const id = btn.dataset.id;
+            const res = await fetch(`/api/${tipoActual}/${id}`);
+            if (!res.ok) {
+              alert('No se pudo obtener la información del lugar');
+              return;
+            }
+            const lugar = await res.json();
+            llenarFormulario(lugar);
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+          };
+        });
+
+        document.querySelectorAll('.btn-eliminar').forEach(btn => {
+          btn.onclick = async () => {
+            if (!confirm('¿Seguro que quieres eliminar este lugar?')) return;
+            const id = btn.dataset.id;
+            const res = await fetch(`/api/${tipoActual}/${id}`, { method: 'DELETE' });
+            if (res.ok) {
+              alert('Lugar eliminado');
+              cargarLugares();
+              limpiarFormulario();
+            } else {
+              alert('Error al eliminar lugar');
+            }
+          };
+        });
       } catch (error) {
-        alert('Error al cargar lugares: ' + error.message);
+        alert('Error cargando lugares: ' + error.message);
       }
     }
 
-    async function editarLugar(id) {
-      try {
-        const res = await fetch(`/api/${tipoActual}/${id}`);
-        if (!res.ok) throw new Error('Lugar no encontrado');
-        const lugar = await res.json();
-        llenarFormulario(lugar);
-        window.scrollTo({ top: 0, behavior: 'smooth' });
-      } catch (error) {
-        alert('Error al obtener lugar: ' + error.message);
-      }
-    }
-
-    async function eliminarLugar(id) {
-      if (!confirm('¿Seguro que quieres eliminar este lugar?')) return;
-      try {
-        const res = await fetch(`/api/${tipoActual}/${id}`, { method: 'DELETE' });
-        if (!res.ok) throw new Error('Error al eliminar');
+    // Cambiar tipo con dropdown
+    document.querySelectorAll('#tipo-dropdown a').forEach(a => {
+      a.addEventListener('click', e => {
+        e.preventDefault();
+        tipoActual = a.dataset.tipo;
+        btnTipo.textContent = a.textContent + ' ▾';
+        limpiarFormulario();
+        actualizarVisibilidadCampos();
         cargarLugares();
-      } catch (error) {
-        alert('Error al eliminar lugar: ' + error.message);
-      }
-    }
+      });
+    });
 
-    formLugar.addEventListener('submit', async e => {
+    // Manejo de submit
+    formLugar.onsubmit = async e => {
       e.preventDefault();
-      const id = document.getElementById('id-lugar').value;
+
+      const id = document.getElementById('id-lugar').value.trim();
       const nombre = document.getElementById('nombre').value.trim();
-      const estrellas = parseInt(document.getElementById('estrellas').value.trim());
+      const estrellas = document.getElementById('estrellas').value.trim();
       const descripcion = document.getElementById('descripcion').value.trim();
       const direccion = document.getElementById('direccion').value.trim();
       const iframe_mapa = document.getElementById('iframe_mapa').value.trim();
       const imagen_url = document.getElementById('imagen_url').value.trim();
 
-      if (isNaN(estrellas) || estrellas < 0 || estrellas > 5) {
-        alert('El campo Estrellas debe ser un número entre 0 y 5.');
+      if (!nombre || !estrellas || !descripcion || !direccion || !iframe_mapa || !imagen_url) {
+        alert('Por favor llena todos los campos requeridos.');
         return;
       }
 
       const lugar = { nombre, estrellas, descripcion, direccion, iframe_mapa, imagen_url };
+
+      if (tipoActual === 'hoteles') {
+        const numHabitaciones = parseInt(inputNumHabitaciones.value.trim());
+        if (isNaN(numHabitaciones) || numHabitaciones < 1) {
+          alert('Por favor ingresa un número válido de habitaciones.');
+          return;
+        }
+        lugar.num_habitaciones = numHabitaciones;
+      }
 
       try {
         let res;
@@ -303,48 +366,33 @@
           res = await fetch(`/api/${tipoActual}/${id}`, {
             method: 'PUT',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(lugar),
+            body: JSON.stringify(lugar)
           });
         } else {
           // Crear
           res = await fetch(`/api/${tipoActual}`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(lugar),
+            body: JSON.stringify(lugar)
           });
         }
-
-        if (!res.ok) throw new Error('Error en la operación');
-
+        if (!res.ok) throw new Error('Error al guardar lugar');
+        alert(id ? 'Lugar actualizado' : 'Lugar agregado');
         limpiarFormulario();
         cargarLugares();
       } catch (error) {
         alert('Error al guardar lugar: ' + error.message);
       }
-    });
+    };
 
-    btnCancel.addEventListener('click', () => {
+    btnCancel.onclick = () => {
       limpiarFormulario();
-    });
+    };
 
-    document.querySelectorAll('#tipo-dropdown a').forEach(a => {
-      a.addEventListener('click', e => {
-        e.preventDefault();
-        tipoActual = a.dataset.tipo;
-        btnTipo.textContent = a.textContent + ' ▾';
-        limpiarFormulario();
-        cargarLugares();
-      });
-    });
-
-    document.getElementById('logout-btn').addEventListener('click', () => {
-      // Aquí implementar lógica de logout si tienes
-      alert('Cerrar sesión (implementar lógica)');
-    });
-
-    // Carga inicial
+    // Inicializar
+    actualizarVisibilidadCampos();
     cargarLugares();
+
   </script>
 </body>
 </html>
-
