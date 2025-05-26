@@ -215,6 +215,40 @@ app.post('/registro', async (req, res) => {
   }
 })();
 
+app.post('/iniciar-sesion', async (req, res) => {
+  const { correo, contrasena } = req.body;
+
+  if (!correo || !contrasena) {
+    return res.status(400).send('Faltan datos');
+  }
+
+  try {
+    const result = await pool.query(
+      'SELECT * FROM usuario WHERE correo = $1 AND contrasena = $2',
+      [correo, contrasena]
+    );
+
+    if (result.rows.length === 0) {
+      return res.status(401).send('Credenciales incorrectas');
+    }
+
+    const usuario = result.rows[0];
+
+    if (usuario.rol === 1) {
+      res.json({ redireccion: 'admin.html' });
+    } else if (usuario.rol === 2) {
+      res.json({ redireccion: 'index.html' });
+    } else {
+      res.status(403).send('Rol no válido');
+    }
+
+  } catch (error) {
+    console.error('Error al iniciar sesión:', error);
+    res.status(500).send('Error interno del servidor');
+  }
+});
+
+
 // Validaciones
 const tablasValidas = {
   hoteles: 'hoteles',
