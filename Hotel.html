@@ -143,14 +143,15 @@
         data.forEach(item => {
           const card = document.createElement('div');
           card.className = 'card';
-          card.innerHTML = `
-            <img src="${item.imagen_url}" alt="${item.nombre}" onerror="this.src='default.jpg'"/>
-            <h3>${item.nombre}</h3>
-            <div class="estrellas">${'★'.repeat(item.estrellas)}</div>
-            <p>${item.descripcion}</p>
-            <small>${item.direccion}</small>
-            <div class="mapa">${item.iframe_mapa}</div>
-          `;
+  card.innerHTML = `
+  <img src="${item.imagen_url}" alt="${item.nombre}" onerror="this.src='/Imagenes/default.jpg'"/>
+  <h3>${item.nombre}</h3>
+  <div class="estrellas">${'★'.repeat(item.estrellas) + '☆'.repeat(5 - item.estrellas)}</div>
+  <p>${item.descripcion}</p>
+  <small>${item.direccion}</small>
+  <div class="mapa">${item.iframe_mapa}</div>
+  <button class="btn-reservar">Reservar</button>
+`;
           contenedor.appendChild(card);
         });
       } catch(e) {
