@@ -19,11 +19,24 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
 
-// Servir archivos estáticos (frontend + imágenes)
+// Servir archivos estáticos
 app.use(express.static(__dirname));
 app.use('/Imagenes', express.static(path.join(__dirname, 'Imagenes')));
 
-// Crear tabla usuariosv2 si no existe
+// 🔧 Agregar columnas imagen_url si no existen
+async function agregarColumnasImagen() {
+  try {
+    await pool.query(`ALTER TABLE hoteles ADD COLUMN IF NOT EXISTS imagen_url TEXT;`);
+    await pool.query(`ALTER TABLE restaurantes ADD COLUMN IF NOT EXISTS imagen_url TEXT;`);
+    await pool.query(`ALTER TABLE puntos_interes ADD COLUMN IF NOT EXISTS imagen_url TEXT;`);
+    console.log('✅ Columnas imagen_url agregadas o ya existían');
+  } catch (error) {
+    console.error('❌ Error al agregar columnas imagen_url:', error);
+  }
+}
+agregarColumnasImagen();
+
+// 🧱 Crear tabla usuariosv2 si no existe
 app.post('/crear-tabla-usuariosv2', async (req, res) => {
   try {
     await pool.query(`
@@ -45,7 +58,7 @@ app.post('/crear-tabla-usuariosv2', async (req, res) => {
   }
 });
 
-// Insertar administrador por defecto si no existe
+// 👤 Insertar administrador por defecto
 (async () => {
   const adminCorreo = 'admin@tudeca.com';
   const adminPasswordPlano = 'emirbb18';
@@ -67,7 +80,7 @@ app.post('/crear-tabla-usuariosv2', async (req, res) => {
   }
 })();
 
-// Crear tablas hoteles, restaurantes y puntos_interes si no existen
+// 🏨 Crear tablas principales si no existen
 (async () => {
   try {
     await pool.query(`
@@ -109,29 +122,7 @@ app.post('/crear-tabla-usuariosv2', async (req, res) => {
   }
 })();
 
-// Asume que ya tienes configurado pool con pg
-const { Pool } = require('pg');
-const pool = new Pool({
-  connectionString: process.env.DATABASE_URL,
-  ssl: { rejectUnauthorized: false } // si estás en Render
-});
-
-// Script para agregar las columnas si no existen
-async function agregarColumnasImagen() {
-  try {
-    await pool.query(`ALTER TABLE hoteles ADD COLUMN IF NOT EXISTS imagen_url TEXT;`);
-    await pool.query(`ALTER TABLE restaurantes ADD COLUMN IF NOT EXISTS imagen_url TEXT;`);
-    await pool.query(`ALTER TABLE puntos_interes ADD COLUMN IF NOT EXISTS imagen_url TEXT;`);
-    console.log('Columnas imagen_url agregadas (o ya existían)');
-  } catch (error) {
-    console.error('Error al agregar columnas imagen_url:', error);
-  }
-}
-
-// Llama a esta función al iniciar tu app
-agregarColumnasImagen();
-
-// Registro de usuarios (turistas)
+// 👥 Registro de turistas
 app.post('/registro', async (req, res) => {
   const { nombre, apellido, telefono, correo, sexo, password } = req.body;
   try {
@@ -147,7 +138,7 @@ app.post('/registro', async (req, res) => {
   }
 });
 
-// Login
+// 🔐 Login
 app.post('/login', async (req, res) => {
   const { usuario, password } = req.body;
 
@@ -176,7 +167,7 @@ app.post('/login', async (req, res) => {
   }
 });
 
-// Obtener datos del usuario autenticado
+// 🔍 Obtener usuario autenticado
 app.get('/me', (req, res) => {
   const token = req.cookies.token;
   if (!token) return res.status(401).send('No autenticado');
@@ -188,13 +179,13 @@ app.get('/me', (req, res) => {
   }
 });
 
-// Logout
+// 🚪 Logout
 app.post('/logout', (req, res) => {
   res.clearCookie('token');
   res.send('Sesión cerrada');
 });
 
-// Middleware para validar tipo de lugar
+// ✅ Middleware para validar tipo
 function validarTipoLugar(req, res, next) {
   const { tipo } = req.params;
   if (!['hoteles', 'restaurantes', 'puntos_interes'].includes(tipo)) {
@@ -203,7 +194,7 @@ function validarTipoLugar(req, res, next) {
   next();
 }
 
-// Obtener lista de lugares
+// 📄 Obtener lista de lugares
 app.get('/api/:tipo', validarTipoLugar, async (req, res) => {
   const { tipo } = req.params;
   try {
@@ -215,7 +206,7 @@ app.get('/api/:tipo', validarTipoLugar, async (req, res) => {
   }
 });
 
-// Insertar lugar
+// ➕ Insertar lugar
 app.post('/api/:tipo', validarTipoLugar, async (req, res) => {
   const { tipo } = req.params;
   const { nombre, estrellas, descripcion, direccion, iframe_mapa, imagen_url } = req.body;
@@ -236,7 +227,7 @@ app.post('/api/:tipo', validarTipoLugar, async (req, res) => {
   }
 });
 
-// Eliminar lugar
+// ❌ Eliminar lugar
 app.delete('/api/:tipo/:id', validarTipoLugar, async (req, res) => {
   const { tipo, id } = req.params;
   try {
@@ -248,7 +239,7 @@ app.delete('/api/:tipo/:id', validarTipoLugar, async (req, res) => {
   }
 });
 
-// Actualizar lugar
+// ✏️ Actualizar lugar
 app.put('/api/:tipo/:id', validarTipoLugar, async (req, res) => {
   const { tipo, id } = req.params;
   const { nombre, estrellas, descripcion, direccion, iframe_mapa, imagen_url } = req.body;
@@ -277,5 +268,5 @@ app.get('*', (req, res) => {
 
 // Iniciar servidor
 app.listen(PORT, () => {
-  console.log(`Servidor corriendo en http://localhost:${PORT}`);
+  console.log(`🚀 Servidor corriendo en http://localhost:${PORT}`);
 });
