@@ -152,23 +152,15 @@
   </main>
 
   <script>
-// Después de cargar las tarjetas
-function agregarEventosReserva() {
+    function agregarEventosReserva() {
   document.querySelectorAll('.btn-reservar').forEach(btn => {
     btn.addEventListener('click', () => {
       const hotelId = btn.getAttribute('data-id');
-      const usuarioLogeado = localStorage.getItem('usuario'); // o como manejes sesión
-
-      if (!usuarioLogeado) {
-        window.location.href = 'inicio_sesion.html';
-      } else {
-        localStorage.setItem('hotelSeleccionado', hotelId);
-        window.location.href = 'reservas.html';
-      }
+      localStorage.setItem('hotelSeleccionado', hotelId);
+      window.location.href = 'reservas.html';
     });
   });
 }
-
 async function cargarLugares() {
   try {
     const res = await fetch('/api/hoteles');
