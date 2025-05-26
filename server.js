@@ -416,19 +416,41 @@ app.post('/logout', (req, res) => {
   }
 });
 
-app.post('/reservar', (req, res) => {
+app.post('/reservar', async (req, res) => {
   const { nombre_huesped, correo, celular, fecha_inicio, fecha_fin, num_habitacion, hotel_id } = req.body;
+
   if (!nombre_huesped || !correo || !celular || !fecha_inicio || !fecha_fin || !num_habitacion || !hotel_id) {
-    return res.status(400).send('Faltan datos');
+    return res.status(400).send('Faltan campos requeridos');
   }
-  pool.query(
-    `INSERT INTO reserva (nombre_huesped, correo, celular, fecha_inicio, fecha_fin, num_habitacion, hotel_id)
-    VALUES ($1, $2, $3, $4, $5, $6, $7)`,
-    [nombre_huesped, correo, celular, fecha_inicio, fecha_fin, num_habitacion, hotel_id]
-  )
-  .then(() => res.send('Reserva guardada'))
-  .catch(() => res.status(500).send('Error al guardar reserva'));
+
+  try {
+    // Verificar si la habitación ya está reservada
+    const result = await pool.query(`
+      SELECT * FROM reserva
+      WHERE hotel_id = $1 AND num_habitacion = $2
+        AND (
+          (fecha_inicio <= $3 AND fecha_fin >= $3) OR
+          (fecha_inicio <= $4 AND fecha_fin >= $4)
+        )
+    `, [hotel_id, num_habitacion, fecha_inicio, fecha_fin]);
+
+    if (result.rows.length > 0) {
+      return res.status(409).send('Habitación ya reservada en ese período');
+    }
+
+    // Insertar la reserva
+    await pool.query(`
+      INSERT INTO reserva (nombre_huesped, correo, celular, fecha_inicio, fecha_fin, num_habitacion, hotel_id)
+      VALUES ($1, $2, $3, $4, $5, $6, $7)
+    `, [nombre_huesped, correo, celular, fecha_inicio, fecha_fin, num_habitacion, hotel_id]);
+
+    res.send('Reserva realizada con éxito');
+  } catch (error) {
+    console.error('Error al registrar reserva:', error);
+    res.status(500).send('Error interno del servidor');
+  }
 });
+
 
 app.listen(PORT, () => {
   console.log(`Servidor escuchando en puerto ${PORT}`);
