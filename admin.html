@@ -63,7 +63,7 @@
       display: block;
       margin-top: 10px;
     }
-    input[type=text], input[type=number], textarea, select {
+    input[type=text], textarea, select {
       width: 100%;
       padding: 8px;
       margin-top: 4px;
@@ -144,23 +144,23 @@
       }
     }
 
-    .btn-reservar {
-      margin: 10px 0 10px 0;
-      padding: 10px 20px;
-      background-color: #5a9352;
-      color: white;
-      border: none;
-      border-radius: 5px;
-      font-weight: bold;
-      cursor: pointer;
-      transition: background-color 0.3s ease;
-      width: 100%;
-      text-align: center;
-    }
+.btn-reservar {
+  margin: 10px 0 10px 0;
+  padding: 10px 20px;
+  background-color: #5a9352; /* Verde navbar */
+  color: white;
+  border: none;
+  border-radius: 5px;
+  font-weight: bold;
+  cursor: pointer;
+  transition: background-color 0.3s ease;
+  width: 100%;
+  text-align: center;
+}
 
-    .btn-reservar:hover {
-      background-color: #4a7946;
-    }
+.btn-reservar:hover {
+  background-color: #4a7946;
+}
   </style>
 </head>
 <body>
@@ -174,7 +174,7 @@
       </div>
     </div>
     <h1 class="title">Admin TUDECA</h1>
-    <button class="button" id="logout-btn">Cerrar Sesión</button>
+    <button class ="button" id="logout-btn">Cerrar Sesión</button>
   </nav>
 
   <div class="container">
@@ -193,11 +193,6 @@
       <textarea id="iframe_mapa" rows="2" required></textarea>
       <label for="imagen_url">URL Imagen (ej. /Imagenes/hotel.jpg)</label>
       <input type="text" id="imagen_url" placeholder="/Imagenes/hotel.jpg" required />
-
-      <!-- Nuevo campo para hoteles -->
-      <label for="num_habitaciones" id="label-num_habitaciones" style="display:none;">Número de Habitaciones</label>
-      <input type="number" id="num_habitaciones" min="1" style="display:none;" />
-
       <button type="submit" id="btn-submit">Agregar</button>
       <button type="button" id="btn-cancel" style="display:none; margin-left:10px;">Cancelar</button>
     </form>
@@ -222,16 +217,6 @@
       btnCancel.style.display = 'none';
     }
 
-    // Mostrar/Ocultar campo Número de Habitaciones según tipo
-    function ajustarFormularioSegunTipo() {
-      const mostrarNumHab = tipoActual === 'hoteles';
-      document.getElementById('label-num_habitaciones').style.display = mostrarNumHab ? 'block' : 'none';
-      document.getElementById('num_habitaciones').style.display = mostrarNumHab ? 'block' : 'none';
-      if (!mostrarNumHab) {
-        document.getElementById('num_habitaciones').value = '';
-      }
-    }
-
     function llenarFormulario(lugar) {
       document.getElementById('id-lugar').value = lugar.id;
       document.getElementById('nombre').value = lugar.nombre;
@@ -240,13 +225,6 @@
       document.getElementById('direccion').value = lugar.direccion;
       document.getElementById('iframe_mapa').value = lugar.iframe_mapa;
       document.getElementById('imagen_url').value = lugar.imagen_url;
-
-      if (tipoActual === 'hoteles') {
-        document.getElementById('num_habitaciones').value = lugar.num_habitaciones || '';
-      } else {
-        document.getElementById('num_habitaciones').value = '';
-      }
-
       btnSubmit.textContent = 'Actualizar';
       document.getElementById('form-title').textContent = 'Editar lugar';
       btnCancel.style.display = 'inline-block';
@@ -254,13 +232,13 @@
 
     async function cargarLugares() {
       try {
-        const res = await fetch(`/api/${tipoActual}`);
+        const res = await fetch(/api/${tipoActual});
         const data = await res.json();
         listaLugares.innerHTML = '';
         data.forEach(item => {
           const card = document.createElement('div');
           card.className = 'card';
-card.innerHTML = `
+card.innerHTML = 
   <img src="${item.imagen_url}" alt="${item.nombre}" onerror="this.src='/Imagenes/default.jpg'"/>
   <h3>${item.nombre}</h3>
   <div class="estrellas">${'★'.repeat(item.estrellas) + '☆'.repeat(5 - item.estrellas)}</div>
@@ -271,8 +249,7 @@ card.innerHTML = `
     <button onclick="editarLugar(${item.id})">Editar</button>
     <button onclick="eliminarLugar(${item.id})">Eliminar</button>
   </div>
-`;
-          `;
+;
           listaLugares.appendChild(card);
         });
       } catch (err) {
@@ -283,7 +260,7 @@ card.innerHTML = `
 
     async function editarLugar(id) {
       try {
-        const res = await fetch(`/api/${tipoActual}`);
+        const res = await fetch(/api/${tipoActual});
         const data = await res.json();
         const lugar = data.find(item => item.id === id);
         if (lugar) llenarFormulario(lugar);
@@ -295,7 +272,7 @@ card.innerHTML = `
     async function eliminarLugar(id) {
       if (!confirm('¿Seguro que quieres eliminar este lugar?')) return;
       try {
-        const res = await fetch(`/api/${tipoActual}/${id}`, { method: 'DELETE' });
+        const res = await fetch(/api/${tipoActual}/${id}, { method: 'DELETE' });
         if (res.ok) {
           alert('Lugar eliminado');
           cargarLugares();
@@ -308,12 +285,11 @@ card.innerHTML = `
       }
     }
 
-    formLugar.addEventListener('submit', async (e) => {
+    formLugar.addEventListener('submit', async e => {
       e.preventDefault();
-
       const id = document.getElementById('id-lugar').value;
       const nombre = document.getElementById('nombre').value.trim();
-      const estrellas = parseInt(document.getElementById('estrellas').value.trim(), 10) || 0;
+      const estrellas = document.getElementById('estrellas').value.trim();
       const descripcion = document.getElementById('descripcion').value.trim();
       const direccion = document.getElementById('direccion').value.trim();
       const iframe_mapa = document.getElementById('iframe_mapa').value.trim();
@@ -321,28 +297,19 @@ card.innerHTML = `
 
       const lugarData = { nombre, estrellas, descripcion, direccion, iframe_mapa, imagen_url };
 
-      if (tipoActual === 'hoteles') {
-        const num_habitaciones = parseInt(document.getElementById('num_habitaciones').value.trim(), 10);
-        if (!num_habitaciones || num_habitaciones < 1) {
-          alert('Por favor, ingresa un número válido de habitaciones.');
-          return;
-        }
-        lugarData.num_habitaciones = num_habitaciones;
-      }
-
       try {
         let res;
         if (id) {
-          res = await fetch(`/api/${tipoActual}/${id}`, {
+          res = await fetch(/api/${tipoActual}/${id}, {
             method: 'PUT',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(lugarData),
+            body: JSON.stringify(lugarData)
           });
         } else {
-          res = await fetch(`/api/${tipoActual}`, {
+          res = await fetch(/api/${tipoActual}, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(lugarData),
+            body: JSON.stringify(lugarData)
           });
         }
         if (res.ok) {
@@ -357,30 +324,25 @@ card.innerHTML = `
       }
     });
 
-    btnCancel.addEventListener('click', () => {
-      limpiarFormulario();
-    });
+    btnCancel.addEventListener('click', limpiarFormulario);
 
-    // Cambiar tipo (hoteles, restaurantes, puntos_interes)
     dropdown.querySelectorAll('a').forEach(link => {
       link.addEventListener('click', e => {
         e.preventDefault();
         tipoActual = e.target.getAttribute('data-tipo');
         btnTipo.textContent = e.target.textContent + ' ▾';
         limpiarFormulario();
-        ajustarFormularioSegunTipo();
         cargarLugares();
       });
     });
 
-    // Inicializar al cargar
-    ajustarFormularioSegunTipo();
-    cargarLugares();
-
-    // Botón cerrar sesión (puedes conectar con backend si tienes)
-    document.getElementById('logout-btn').addEventListener('click', () => {
-      alert('Cerrar sesión - Implementa lógica de logout aquí');
+    document.getElementById('logout-btn').addEventListener('click', async () => {
+      await fetch('/logout', { method: 'POST' });
+      alert('Sesión cerrada');
+      location.reload();
     });
+
+    cargarLugares();
   </script>
 </body>
 </html>
