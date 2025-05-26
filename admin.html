@@ -165,7 +165,7 @@
       <input type="hidden" id="id-lugar" value="" />
       <label for="nombre">Nombre</label>
       <input type="text" id="nombre" required />
-      <label for="estrellas">Estrellas (ej. ★★★☆☆)</label>
+      <label for="estrellas">Estrellas (ej. 3)</label>
       <input type="text" id="estrellas" required />
       <label for="descripcion">Descripción</label>
       <textarea id="descripcion" rows="3" required></textarea>
@@ -223,7 +223,7 @@
           card.innerHTML = `
             <img src="${item.imagen_url}" alt="${item.nombre}" onerror="this.src='/Imagenes/default.jpg'"/>
             <h3>${item.nombre}</h3>
-            <div class="estrellas">${item.estrellas}</div>
+            <div class="estrellas">${'★'.repeat(parseInt(item.estrellas) || 0)}</div>
             <p>${item.descripcion}</p>
             <small>${item.direccion}</small>
             <div class="mapa">${item.iframe_mapa}</div>
