@@ -8,334 +8,317 @@
       margin: 0;
       font-family: Arial, sans-serif;
       background-color: #e7f1df;
-       .navbar {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            background-color: #5a9352;
-            padding: 10px 20px;
-        }
-
-        .dropdown {
-            position: relative;
-        }
-
-        .dropbtn {
-            background-color: #4a7946;
-            color: white;
-            padding: 10px;
-            font-size: 16px;
-            border: none;
-            cursor: pointer;
-        }
-
-        .dropdown-content {
-            display: none;
-            position: absolute;
-            background-color: #2d4729;
-            box-shadow: 0px 8px 16px rgba(0,0,0,0.2);
-            z-index: 1;
-        }
-
-        .dropdown-content a {
-            color: white;
-            padding: 12px 16px;
-            display: block;
-            text-decoration: none;
-        }
-
-        .dropdown-content a:hover {
-            background-color: #3e6142;
-        }
-
-        .dropdown:hover .dropdown-content {
-            display: block;
-        }
-
-        .title {
-            font-size: 24px;
-            color: white;
-            font-weight: bold;
-        }
-    main {
-      padding: 20px;
-      max-width: 1000px;
-      margin: auto;
     }
-    select, input, textarea, button {
+    .navbar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background-color: #5a9352;
+      padding: 10px 20px;
+    }
+    .dropdown {
+      position: relative;
+    }
+    .dropbtn {
+      background-color: #4a7946;
+      color: white;
+      padding: 10px;
       font-size: 16px;
-      margin: 5px 0 15px 0;
-      padding: 8px;
-      width: 100%;
-      box-sizing: border-box;
+      border: none;
+      cursor: pointer;
+    }
+    .dropdown-content {
+      display: none;
+      position: absolute;
+      background-color: #2d4729;
+      box-shadow: 0px 8px 16px rgba(0,0,0,0.2);
+      z-index: 1;
+    }
+    .dropdown-content a {
+      color: white;
+      padding: 12px 16px;
+      display: block;
+      text-decoration: none;
+    }
+    .dropdown-content a:hover {
+      background-color: #3e6142;
+    }
+    .dropdown:hover .dropdown-content {
+      display: block;
+    }
+    .title {
+      font-size: 24px;
+      color: white;
+      margin: 0;
+    }
+    .container {
+      max-width: 900px;
+      margin: 20px auto;
+      background: #fff;
+      padding: 20px;
+      border-radius: 8px;
+      box-shadow: 0 0 10px #aaa;
     }
     label {
-      font-weight: bold;
+      display: block;
+      margin-top: 10px;
     }
-    .card {
-      background: white;
-      border-radius: 8px;
-      box-shadow: 0 2px 8px rgba(0,0,0,0.15);
-      margin-bottom: 20px;
-      display: flex;
-      overflow: hidden;
-      flex-wrap: wrap;
-    }
-    .card img {
-      width: 300px;
-      height: auto;
-      object-fit: cover;
-    }
-    .card-content {
-      padding: 15px;
-      flex: 1;
-    }
-    .card-content h4 {
-      margin-top: 0;
-    }
-    .stars {
-      color: #ffa500;
-      margin-bottom: 10px;
-    }
-    .desc, .direccion {
-      margin-bottom: 8px;
-      font-size: 14px;
-      color: #444;
-      text-align: justify;
-    }
-    iframe {
+    input[type=text], textarea, select {
       width: 100%;
-      height: 200px;
-      border: none;
-      margin-top: 10px;
-      border-radius: 6px;
-    }
-    .btn-group {
-      display: flex;
-      gap: 10px;
-      margin-top: 10px;
+      padding: 8px;
+      margin-top: 4px;
+      border: 1px solid #aaa;
+      border-radius: 4px;
+      box-sizing: border-box;
     }
     button {
-      cursor: pointer;
+      margin-top: 15px;
+      padding: 10px 15px;
       background-color: #5a9352;
-      border: none;
       color: white;
-      padding: 8px 12px;
-      border-radius: 4px;
-      font-weight: bold;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
     }
     button:hover {
       background-color: #4a7946;
     }
-    .reserva-btn {
-      background-color: #3e6b3d;
-      padding: 6px 10px;
-      font-size: 14px;
-      margin-top: 10px;
-      display: inline-block;
-      text-decoration: none;
-      color: white;
-      border-radius: 4px;
+    .cards {
+      margin-top: 20px;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 15px;
     }
-
-              .signup-btn-link {
-            display: inline-block;
-            background-color: #5a9352;
-            color: white;
-            text-decoration: none;
-            padding: 10px 25px;
-            font-weight: bold;
-            border-radius: 2px;
-        }
-
-        .signup-btn-link:hover {
-            background-color: #4a7946;
-        }
+    .card {
+      background: #f9f9f9;
+      border-radius: 8px;
+      box-shadow: 0 0 5px #bbb;
+      padding: 15px;
+      width: calc(33% - 10px);
+      box-sizing: border-box;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+    }
+    .card img {
+      width: 100%;
+      height: 150px;
+      object-fit: cover;
+      border-radius: 6px;
+    }
+    .card h3 {
+      margin: 10px 0 5px;
+    }
+    .card p {
+      font-size: 14px;
+      margin: 5px 0;
+      flex-grow: 1;
+    }
+    .card small {
+      font-size: 12px;
+      color: #555;
+    }
+    .card button {
+      background-color: #c34444;
+      margin-top: 10px;
+    }
+    .card button:hover {
+      background-color: #9b3333;
+    }
+    @media(max-width: 700px){
+      .card {
+        width: 100%;
+      }
+    }
   </style>
 </head>
 <body>
+  <nav class="navbar">
+    <div class="dropdown">
+      <button class="dropbtn" id="tipo-select-btn">Hoteles ▾</button>
+      <div class="dropdown-content" id="tipo-dropdown">
+        <a href="#" data-tipo="hoteles">Hoteles</a>
+        <a href="#" data-tipo="restaurantes">Restaurantes</a>
+        <a href="#" data-tipo="puntos_interes">Puntos de Interés</a>
+      </div>
+    </div>
+    <h1 class="title">Admin TUDECA</h1>
+    <button id="logout-btn">Cerrar Sesión</button>
+  </nav>
 
-    <header>
-        <div class="navbar">
-            <div class="dropdown">
-                <button class="dropbtn">Menú ▼</button>
-                <div class="dropdown-content">
-                    <a href="Hoteles.html">Hoteles</a>
-                    <a href="restaurantes.html">Restaurantes</a>
-                    <a href="puntos_interes.html">Atracciones</a>
-                </div>
+  <div class="container">
+    <h2 id="form-title">Agregar lugar</h2>
+    <form id="form-lugar">
+      <input type="hidden" id="id-lugar" value="" />
+      <label for="nombre">Nombre</label>
+      <input type="text" id="nombre" required />
+      <label for="estrellas">Estrellas (ej. ★★★☆☆)</label>
+      <input type="text" id="estrellas" required />
+      <label for="descripcion">Descripción</label>
+      <textarea id="descripcion" rows="3" required></textarea>
+      <label for="direccion">Dirección</label>
+      <input type="text" id="direccion" required />
+      <label for="iframe_mapa">Iframe del mapa (Google Maps)</label>
+      <textarea id="iframe_mapa" rows="2" required></textarea>
+      <label for="imagen_url">URL Imagen (ej. /Imagenes/hotel.jpg)</label>
+      <input type="text" id="imagen_url" placeholder="/Imagenes/hotel.jpg" required />
+      <button type="submit" id="btn-submit">Agregar</button>
+      <button type="button" id="btn-cancel" style="display:none; margin-left:10px;">Cancelar</button>
+    </form>
+
+    <section class="cards" id="lista-lugares"></section>
+  </div>
+
+  <script>
+    let tipoActual = 'hoteles';
+    const btnTipo = document.getElementById('tipo-select-btn');
+    const dropdown = document.getElementById('tipo-dropdown');
+    const listaLugares = document.getElementById('lista-lugares');
+    const formLugar = document.getElementById('form-lugar');
+    const btnSubmit = document.getElementById('btn-submit');
+    const btnCancel = document.getElementById('btn-cancel');
+
+    function limpiarFormulario() {
+      formLugar.reset();
+      document.getElementById('id-lugar').value = '';
+      btnSubmit.textContent = 'Agregar';
+      document.getElementById('form-title').textContent = 'Agregar lugar';
+      btnCancel.style.display = 'none';
+    }
+
+    function llenarFormulario(lugar) {
+      document.getElementById('id-lugar').value = lugar.id;
+      document.getElementById('nombre').value = lugar.nombre;
+      document.getElementById('estrellas').value = lugar.estrellas;
+      document.getElementById('descripcion').value = lugar.descripcion;
+      document.getElementById('direccion').value = lugar.direccion;
+      document.getElementById('iframe_mapa').value = lugar.iframe_mapa;
+      document.getElementById('imagen_url').value = lugar.imagen_url;
+      btnSubmit.textContent = 'Actualizar';
+      document.getElementById('form-title').textContent = 'Editar lugar';
+      btnCancel.style.display = 'inline-block';
+    }
+
+    async function cargarLugares() {
+      try {
+        const res = await fetch(`/api/${tipoActual}`);
+        const data = await res.json();
+        listaLugares.innerHTML = '';
+        data.forEach(item => {
+          const card = document.createElement('div');
+          card.className = 'card';
+          card.innerHTML = `
+            <img src="${item.imagen_url}" alt="${item.nombre}" onerror="this.src='/Imagenes/default.jpg'"/>
+            <h3>${item.nombre}</h3>
+            <small>${item.estrellas}</small>
+            <p>${item.descripcion}</p>
+            <small>${item.direccion}</small>
+            <div style="margin-top: 8px;">
+              <button onclick="editarLugar(${item.id})">Editar</button>
+              <button onclick="eliminarLugar(${item.id})">Eliminar</button>
             </div>
-            <div href="index.html" class="title">TUDECA</div>
-            <div><a href="index.html" class="signup-btn-link">Inicio</a></div>
-        </div>
-    </header>
+          `;
+          listaLugares.appendChild(card);
+        });
+      } catch (err) {
+        alert('Error al cargar los lugares.');
+        console.error(err);
+      }
+    }
 
-<main>
+    async function editarLugar(id) {
+      try {
+        const res = await fetch(`/api/${tipoActual}`);
+        const data = await res.json();
+        const lugar = data.find(item => item.id === id);
+        if (lugar) llenarFormulario(lugar);
+      } catch (err) {
+        alert('Error al cargar el lugar.');
+      }
+    }
 
-  <label for="tipo">Seleccione Tipo:</label>
-  <select id="tipo">
-    <option value="hoteles">Hotel</option>
-    <option value="restaurantes">Restaurante</option>
-    <option value="puntos_interes">Punto de Interés</option>
-  </select>
+    async function eliminarLugar(id) {
+      if (!confirm('¿Seguro que quieres eliminar este lugar?')) return;
+      try {
+        const res = await fetch(`/api/${tipoActual}/${id}`, { method: 'DELETE' });
+        if (res.ok) {
+          alert('Lugar eliminado');
+          cargarLugares();
+          limpiarFormulario();
+        } else {
+          alert('Error al eliminar lugar');
+        }
+      } catch (err) {
+        alert('Error al eliminar lugar');
+      }
+    }
 
-  <form id="formLugar">
-    <input type="hidden" id="itemId" value="">
+    formLugar.addEventListener('submit', async e => {
+      e.preventDefault();
+      const id = document.getElementById('id-lugar').value;
+      const nombre = document.getElementById('nombre').value.trim();
+      const estrellas = document.getElementById('estrellas').value.trim();
+      const descripcion = document.getElementById('descripcion').value.trim();
+      const direccion = document.getElementById('direccion').value.trim();
+      const iframe_mapa = document.getElementById('iframe_mapa').value.trim();
+      const imagen_url = document.getElementById('imagen_url').value.trim();
 
-    <label for="nombre">Nombre</label>
-    <input type="text" id="nombre" required />
+      const lugarData = { nombre, estrellas, descripcion, direccion, iframe_mapa, imagen_url };
 
-    <label for="estrellas">Estrellas (1 a 5)</label>
-    <input type="number" id="estrellas" min="1" max="5" required />
-
-    <label for="descripcion">Descripción</label>
-    <textarea id="descripcion" rows="3" required></textarea>
-
-    <label for="direccion">Dirección</label>
-    <input type="text" id="direccion" required />
-
-    <label for="iframe_mapa">Iframe de Google Maps</label>
-    <textarea id="iframe_mapa" rows="4" placeholder="Pega aquí el iframe de Google Maps" required></textarea>
-
-    <label for="imagen_url">URL de la Imagen</label>
-    <input type="text" id="imagen_url" placeholder="ej. /imagenes/hotel.jpg" required />
-
-    <button type="submit">Agregar / Actualizar</button>
-  </form>
-
-  <hr />
-
-  <h3>Lista de Lugares Agregados</h3>
-  <div id="lista"></div>
-</main>
-
-<script>
-  const tipoSelect = document.getElementById('tipo');
-  const form = document.getElementById('formLugar');
-  const listaDiv = document.getElementById('lista');
-  const itemIdInput = document.getElementById('itemId');
-
-  async function cargarLista() {
-    const tipo = tipoSelect.value;
-    const res = await fetch(`/api/${tipo}`);
-    const datos = await res.json();
-
-    listaDiv.innerHTML = '';
-
-    datos.forEach(item => {
-      const card = document.createElement('div');
-      card.className = 'card';
-
-      const estrellas = '★'.repeat(item.estrellas) + '☆'.repeat(5 - item.estrellas);
-
-      card.innerHTML = `
-        <img src="${item.imagen_url || '/imagenes/default.jpg'}" alt="${item.nombre}">
-        <div class="card-content">
-          <h4>${item.nombre}</h4>
-          <div class="stars">${estrellas}</div>
-          <div class="desc">${item.descripcion}</div>
-          <div class="direccion"><strong>Dirección:</strong> ${item.direccion}</div>
-          ${item.iframe_mapa || ''}
-          <a href="#" class="reserva-btn">Reserva</a>
-          <div class="btn-group">
-            <button onclick="editar(${item.id})">Editar</button>
-            <button onclick="eliminar(${item.id})">Eliminar</button>
-          </div>
-        </div>
-      `;
-
-      listaDiv.appendChild(card);
+      try {
+        let res;
+        if (id) {
+          // Actualizar
+          res = await fetch(`/api/${tipoActual}/${id}`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(lugarData)
+          });
+        } else {
+          // Crear
+          res = await fetch(`/api/${tipoActual}`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(lugarData)
+          });
+        }
+        if (res.ok) {
+          alert(id ? 'Lugar actualizado' : 'Lugar agregado');
+          cargarLugares();
+          limpiarFormulario();
+        } else {
+          alert('Error al guardar lugar');
+        }
+      } catch (err) {
+        alert('Error en la petición');
+      }
     });
-  }
 
-  tipoSelect.addEventListener('change', () => {
-    limpiarFormulario();
-    cargarLista();
-  });
+    btnCancel.addEventListener('click', limpiarFormulario);
 
-  function limpiarFormulario() {
-    itemIdInput.value = '';
-    form.nombre.value = '';
-    form.estrellas.value = '';
-    form.descripcion.value = '';
-    form.direccion.value = '';
-    form.iframe_mapa.value = '';
-    form.imagen_url.value = '';
-  }
-
-  form.addEventListener('submit', async e => {
-    e.preventDefault();
-    const tipo = tipoSelect.value;
-
-    const data = {
-      nombre: form.nombre.value,
-      estrellas: parseInt(form.estrellas.value),
-      descripcion: form.descripcion.value,
-      direccion: form.direccion.value,
-      iframe_mapa: form.iframe_mapa.value,
-      imagen_url: form.imagen_url.value,
-    };
-
-    if (itemIdInput.value) {
-      const id = itemIdInput.value;
-      const res = await fetch(`/api/${tipo}/${id}`, {
-        method: 'PUT',
-        headers: {'Content-Type': 'application/json'},
-        body: JSON.stringify(data),
-      });
-      if (res.ok) {
-        alert('Actualizado con éxito');
+    // Cambiar tipo actual
+    dropdown.querySelectorAll('a').forEach(link => {
+      link.addEventListener('click', e => {
+        e.preventDefault();
+        tipoActual = e.target.getAttribute('data-tipo');
+        btnTipo.textContent = e.target.textContent + ' ▾';
         limpiarFormulario();
-        cargarLista();
-      } else {
-        alert('Error al actualizar');
-      }
-    } else {
-      const res = await fetch(`/api/${tipo}`, {
-        method: 'POST',
-        headers: {'Content-Type': 'application/json'},
-        body: JSON.stringify(data),
+        cargarLugares();
       });
-      if (res.ok) {
-        alert('Agregado con éxito');
-        limpiarFormulario();
-        cargarLista();
-      } else {
-        alert('Error al agregar');
-      }
-    }
-  });
+    });
 
-  window.editar = async function(id) {
-    const tipo = tipoSelect.value;
-    const res = await fetch(`/api/${tipo}`);
-    const datos = await res.json();
-    const item = datos.find(i => i.id === id);
-    if (!item) return alert('No encontrado');
+    // Cerrar sesión
+    document.getElementById('logout-btn').addEventListener('click', async () => {
+      await fetch('/logout', { method: 'POST' });
+      alert('Sesión cerrada');
+      location.reload();
+    });
 
-    itemIdInput.value = item.id;
-    form.nombre.value = item.nombre;
-    form.estrellas.value = item.estrellas;
-    form.descripcion.value = item.descripcion;
-    form.direccion.value = item.direccion;
-    form.iframe_mapa.value = item.iframe_mapa || '';
-    form.imagen_url.value = item.imagen_url || '';
-  };
-
-  window.eliminar = async function(id) {
-    const tipo = tipoSelect.value;
-    if (!confirm('¿Eliminar este registro?')) return;
-    const res = await fetch(`/api/${tipo}/${id}`, { method: 'DELETE' });
-    if (res.ok) {
-      alert('Eliminado');
-      cargarLista();
-    } else {
-      alert('Error al eliminar');
-    }
-  };
-
-  cargarLista();
-</script>
+    // Cargar inicial
+    cargarLugares();
+  </script>
+</body>
+</html>
 
 </body>
 </html>
