@@ -9,12 +9,47 @@
       font-family: Arial, sans-serif;
       background-color: #e7f1df;
     }
-    header {
+    .navbar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
       background-color: #5a9352;
       padding: 10px 20px;
       color: white;
+    }
+    .dropdown {
+      position: relative;
+    }
+    .dropbtn {
+      background-color: #4d7a44;
+      color: white;
+      padding: 10px;
+      border: none;
+      cursor: pointer;
+      font-size: 16px;
+    }
+    .dropdown-content {
+      display: none;
+      position: absolute;
+      background-color: #2f4f2f;
+      min-width: 160px;
+      z-index: 1;
+    }
+    .dropdown-content a {
+      color: white;
+      padding: 10px 16px;
+      text-decoration: none;
+      display: block;
+    }
+    .dropdown-content a:hover {
+      background-color: #4d7a44;
+    }
+    .dropdown:hover .dropdown-content {
+      display: block;
+    }
+    .title {
+      font-size: 24px;
       font-weight: bold;
-      font-size: 20px;
     }
     main {
       padding: 20px;
@@ -100,7 +135,19 @@
 </head>
 <body>
 
-<header>Administración TUDECA</header>
+<header class="navbar">
+  <div class="dropdown">
+    <button class="dropbtn">Menú &#9662;</button>
+    <div class="dropdown-content">
+      <a href="Hotel.html">Hoteles</a>
+      <a href="#">Restaurantes</a>
+      <a href="#">Atracciones</a>
+    </div>
+  </div>
+  <div class="title">TUDECA</div>
+  <div><a href="index.html" class="signup-btn-link" style="color:white; text-decoration:none; font-weight:bold">Inicio</a></div>
+</header>
+
 <main>
 
   <label for="tipo">Seleccione Tipo:</label>
