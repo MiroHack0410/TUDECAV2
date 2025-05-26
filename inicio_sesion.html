@@ -242,7 +242,7 @@
           errorMsg.style.color = 'green';
           errorMsg.textContent = result.mensaje;
 
-          // Retrasar para que se guarden cookies antes de redirigir
+          // Esperar para que se configure la cookie antes de redirigir
           setTimeout(() => {
             if (rol === 1) {
               window.location.href = 'admin.html';
@@ -262,12 +262,8 @@
 
     logoutBtn?.addEventListener('click', async () => {
       await fetch('/logout', { method: 'POST' });
-      checkLogin();
-    });
-  </script>
-</body>
-</html>
-
+      loginBox.style.display = 'block';
+      userInfoBox.style.display = 'none';
     });
   </script>
 </body>
