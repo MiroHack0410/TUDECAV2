@@ -38,8 +38,6 @@
       margin-bottom: 15px;
       padding: 15px;
       position: relative;
-      display: flex;
-      flex-direction: column;
     }
     .card h4 {
       margin: 0 0 10px 0;
@@ -52,7 +50,11 @@
       margin-bottom: 8px;
       font-size: 14px;
       color: #444;
-      text-align: justify;
+    }
+    img {
+      max-width: 100%;
+      border-radius: 6px;
+      margin-top: 10px;
     }
     iframe {
       width: 100%;
@@ -74,7 +76,6 @@
       padding: 8px 12px;
       border-radius: 4px;
       font-weight: bold;
-      transition: background-color 0.3s ease;
     }
     button:hover {
       background-color: #4a7946;
@@ -85,13 +86,13 @@
       font-size: 14px;
       color: white;
       text-decoration: none;
+      display: inline-block;
       border-radius: 4px;
       margin-top: 10px;
-      align-self: flex-start;
-      transition: background-color 0.3s ease;
+      text-align: center;
     }
     .reserva-btn:hover {
-      background-color: #2f4f28;
+      background-color: #346132;
     }
   </style>
 </head>
@@ -107,7 +108,7 @@
     <option value="puntos_interes">Punto de Interés</option>
   </select>
 
-  <form id="formLugar">
+  <form id="formLugar" enctype="multipart/form-data">
     <input type="hidden" id="itemId" value="">
 
     <label for="nombre">Nombre</label>
@@ -124,6 +125,9 @@
 
     <label for="iframe_mapa">Iframe de Google Maps</label>
     <textarea id="iframe_mapa" rows="4" placeholder="Pega aquí el iframe de Google Maps" required></textarea>
+
+    <label for="imagen">Imagen</label>
+    <input type="file" id="imagen" accept="image/*" />
 
     <button type="submit">Agregar / Actualizar</button>
   </form>
@@ -142,37 +146,33 @@
 
   async function cargarLista() {
     const tipo = tipoSelect.value;
-    try {
-      const res = await fetch(`/api/${tipo}`);
-      if (!res.ok) throw new Error('Error al cargar datos');
-      const datos = await res.json();
+    const res = await fetch(`/api/${tipo}`);
+    const datos = await res.json();
 
-      listaDiv.innerHTML = '';
+    listaDiv.innerHTML = '';
 
-      datos.forEach(item => {
-        const card = document.createElement('div');
-        card.className = 'card';
+    datos.forEach(item => {
+      const card = document.createElement('div');
+      card.className = 'card';
 
-        const estrellas = '★'.repeat(item.estrellas) + '☆'.repeat(5 - item.estrellas);
+      const estrellas = '★'.repeat(item.estrellas) + '☆'.repeat(5 - item.estrellas);
 
-        card.innerHTML = `
-          <h4>${item.nombre}</h4>
-          <div class="stars">${estrellas}</div>
-          <div class="desc">${item.descripcion}</div>
-          <div class="direccion"><strong>Dirección:</strong> ${item.direccion}</div>
-          ${item.iframe_mapa || ''}
-          <a href="#" class="reserva-btn">Reserva</a>
-          <div class="btn-group">
-            <button type="button" onclick="editar(${item.id})">Editar</button>
-            <button type="button" onclick="eliminar(${item.id})">Eliminar</button>
-          </div>
-        `;
+      card.innerHTML = `
+        <h4>${item.nombre}</h4>
+        <div class="stars">${estrellas}</div>
+        <div class="desc">${item.descripcion}</div>
+        <div class="direccion"><strong>Dirección:</strong> ${item.direccion}</div>
+        ${item.imagen_url ? `<img src="${item.imagen_url}" alt="${item.nombre}">` : ''}
+        ${item.iframe_mapa || ''}
+        <a href="#" class="reserva-btn">Reserva</a>
+        <div class="btn-group">
+          <button onclick="editar(${item.id})">Editar</button>
+          <button onclick="eliminar(${item.id})">Eliminar</button>
+        </div>
+      `;
 
-        listaDiv.appendChild(card);
-      });
-    } catch (error) {
-      listaDiv.innerHTML = `<p>Error cargando lista: ${error.message}</p>`;
-    }
+      listaDiv.appendChild(card);
+    });
   }
 
   tipoSelect.addEventListener('change', () => {
@@ -187,27 +187,29 @@
     form.descripcion.value = '';
     form.direccion.value = '';
     form.iframe_mapa.value = '';
+    form.imagen.value = '';
   }
 
   form.addEventListener('submit', async e => {
     e.preventDefault();
     const tipo = tipoSelect.value;
 
-    const data = {
-      nombre: form.nombre.value,
-      estrellas: parseInt(form.estrellas.value),
-      descripcion: form.descripcion.value,
-      direccion: form.direccion.value,
-      iframe_mapa: form.iframe_mapa.value,
-    };
+    const formData = new FormData();
+    formData.append('nombre', form.nombre.value);
+    formData.append('estrellas', form.estrellas.value);
+    formData.append('descripcion', form.descripcion.value);
+    formData.append('direccion', form.direccion.value);
+    formData.append('iframe_mapa', form.iframe_mapa.value);
+    if (form.imagen.files.length > 0) {
+      formData.append('imagen', form.imagen.files[0]);
+    }
 
     if (itemIdInput.value) {
       // Actualizar
       const id = itemIdInput.value;
       const res = await fetch(`/api/${tipo}/${id}`, {
         method: 'PUT',
-        headers: {'Content-Type': 'application/json'},
-        body: JSON.stringify(data),
+        body: formData,
       });
       if (res.ok) {
         alert('Actualizado con éxito');
@@ -220,8 +222,7 @@
       // Insertar
       const res = await fetch(`/api/${tipo}`, {
         method: 'POST',
-        headers: {'Content-Type': 'application/json'},
-        body: JSON.stringify(data),
+        body: formData,
       });
       if (res.ok) {
         alert('Agregado con éxito');
@@ -235,22 +236,18 @@
 
   window.editar = async function(id) {
     const tipo = tipoSelect.value;
-    try {
-      const res = await fetch(`/api/${tipo}`);
-      if (!res.ok) throw new Error('Error al cargar datos');
-      const datos = await res.json();
-      const item = datos.find(i => i.id === id);
-      if (!item) return alert('No encontrado');
+    const res = await fetch(`/api/${tipo}`);
+    const datos = await res.json();
+    const item = datos.find(i => i.id === id);
+    if (!item) return alert('No encontrado');
 
-      itemIdInput.value = item.id;
-      form.nombre.value = item.nombre;
-      form.estrellas.value = item.estrellas;
-      form.descripcion.value = item.descripcion;
-      form.direccion.value = item.direccion;
-      form.iframe_mapa.value = item.iframe_mapa || '';
-    } catch (error) {
-      alert(error.message);
-    }
+    itemIdInput.value = item.id;
+    form.nombre.value = item.nombre;
+    form.estrellas.value = item.estrellas;
+    form.descripcion.value = item.descripcion;
+    form.direccion.value = item.direccion;
+    form.iframe_mapa.value = item.iframe_mapa || '';
+    // NOTA: No se puede llenar el input file por seguridad, el usuario debe subir una nueva imagen si quiere cambiarla
   };
 
   window.eliminar = async function(id) {
