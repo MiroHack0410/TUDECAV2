@@ -4,7 +4,6 @@
   <meta charset="UTF-8" />
   <title>TUDECA - Iniciar Sesión</title>
   <style>
-    /* Tu CSS original exactamente como lo pediste */
     body {
         margin: 0;
         font-family: Arial, sans-serif;
@@ -142,9 +141,9 @@
         border-radius: 2px;
     }
 
-     .signup-btn-link:hover {
+    .signup-btn-link:hover {
         background-color: #4a7946;
-        }
+    }
   </style>
 </head>
 <body>
@@ -159,7 +158,7 @@
         </div>
       </div>
       <div class="title">TUDECA</div>
-    <div><a href="index.html" class="signup-btn-link">Inicio</a></div>
+      <div><a href="index.html" class="signup-btn-link">Inicio</a></div>
     </div>
   </header>
 
@@ -239,16 +238,18 @@
 
         const result = await res.json();
         if (res.ok) {
-        errorMsg.style.color = 'green';
-        errorMsg.textContent = result.mensaje;
+          const rol = parseInt(result.rol);
+          errorMsg.style.color = 'green';
+          errorMsg.textContent = result.mensaje;
 
-        if (result.rol === 1) {
-       // Redirigir admin a admin.html
-       window.location.href = '/admin.html';
-      } else {
-      checkLogin();
-        }
-      }
+          // Retrasar para que se guarden cookies antes de redirigir
+          setTimeout(() => {
+            if (rol === 1) {
+              window.location.href = '/admin.html';
+            } else {
+              window.location.href = '/perfil.html';
+            }
+          }, 300);
         } else {
           errorMsg.style.color = 'red';
           errorMsg.textContent = result.message || result || 'Error desconocido';
@@ -259,9 +260,14 @@
       }
     });
 
-    logoutBtn.addEventListener('click', async () => {
+    logoutBtn?.addEventListener('click', async () => {
       await fetch('/logout', { method: 'POST' });
       checkLogin();
+    });
+  </script>
+</body>
+</html>
+
     });
   </script>
 </body>
