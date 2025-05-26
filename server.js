@@ -451,6 +451,17 @@ app.post('/reservar', async (req, res) => {
   }
 });
 
+app.get('/ver-hoteles', async (req, res) => {
+  try {
+    const result = await pool.query('SELECT * FROM hoteles ORDER BY id DESC');
+    res.send(`<pre>${JSON.stringify(result.rows, null, 2)}</pre>`);
+  } catch (error) {
+    console.error('Error al consultar hoteles:', error);
+    res.status(500).send('Error al obtener hoteles');
+  }
+});
+
+
 
 app.listen(PORT, () => {
   console.log(`Servidor escuchando en puerto ${PORT}`);
