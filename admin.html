@@ -2,71 +2,55 @@
 <html lang="es">
 <head>
   <meta charset="UTF-8" />
-  <title>Hoteles TUDECA</title>
+  <title>Admin TUDECA - Gestión de Lugares</title>
   <style>
     body {
-      margin: 0; font-family: Arial, sans-serif; background-color: #e7f1df; padding: 20px;
+      margin: 0;
+      font-family: Arial, sans-serif;
+      background-color: #e7f1df;
     }
-    .navbar {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
+    header {
       background-color: #5a9352;
       padding: 10px 20px;
       color: white;
+      font-weight: bold;
+      font-size: 20px;
     }
-
-    .dropdown {
-      position: relative;
+    main {
+      padding: 20px;
+      max-width: 1000px;
+      margin: auto;
     }
-
-    .dropbtn {
-      background-color: #4d7a44;
-      color: white;
-      padding: 10px;
-      border: none;
-      cursor: pointer;
+    select, input, textarea, button {
       font-size: 16px;
+      margin: 5px 0 15px 0;
+      padding: 8px;
+      width: 100%;
+      box-sizing: border-box;
     }
-
-    .dropdown-content {
-      display: none;
-      position: absolute;
-      background-color: #2f4f2f;
-      min-width: 160px;
-      z-index: 1;
-    }
-
-    .dropdown-content a {
-      color: white;
-      padding: 10px 16px;
-      text-decoration: none;
-      display: block;
-    }
-
-    .dropdown-content a:hover {
-      background-color: #4d7a44;
-    }
-
-    .dropdown:hover .dropdown-content {
-      display: block;
-    }
-
-    .title {
-      font-size: 24px;
+    label {
       font-weight: bold;
     }
-
     .card {
       background: white;
-      border-radius: 6px;
-      box-shadow: 0 0 5px rgba(0,0,0,0.15);
-      margin-bottom: 15px;
-      padding: 15px;
-      max-width: 600px;
+      border-radius: 8px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+      margin-bottom: 20px;
+      display: flex;
+      overflow: hidden;
+      flex-wrap: wrap;
     }
-    .card h4 {
-      margin: 0 0 10px 0;
+    .card img {
+      width: 300px;
+      height: auto;
+      object-fit: cover;
+    }
+    .card-content {
+      padding: 15px;
+      flex: 1;
+    }
+    .card-content h4 {
+      margin-top: 0;
     }
     .stars {
       color: #ffa500;
@@ -76,61 +60,212 @@
       margin-bottom: 8px;
       font-size: 14px;
       color: #444;
+      text-align: justify;
     }
-    .reserva-btn {
-      background-color: #3e6b3d;
-      padding: 8px 12px;
+    iframe {
+      width: 100%;
+      height: 200px;
+      border: none;
+      margin-top: 10px;
+      border-radius: 6px;
+    }
+    .btn-group {
+      display: flex;
+      gap: 10px;
+      margin-top: 10px;
+    }
+    button {
+      cursor: pointer;
+      background-color: #5a9352;
+      border: none;
       color: white;
-      text-decoration: none;
+      padding: 8px 12px;
       border-radius: 4px;
       font-weight: bold;
     }
-    .reserva-btn:hover {
-      background-color: #2f4f29;
+    button:hover {
+      background-color: #4a7946;
+    }
+    .reserva-btn {
+      background-color: #3e6b3d;
+      padding: 6px 10px;
+      font-size: 14px;
+      margin-top: 10px;
+      display: inline-block;
+      text-decoration: none;
+      color: white;
+      border-radius: 4px;
     }
   </style>
 </head>
 <body>
 
-<header class="navbar">
-  <div class="dropdown">
-    <button class="dropbtn">Menú &#9662;</button>
-    <div class="dropdown-content">
-      <a href="Hotel.html">Hoteles</a>
-      <a href="#">Restaurantes</a>
-      <a href="#">Atracciones</a>
-    </div>
-  </div>
-  <div class="title">TUDECA</div>
-  <div><a href="index.html" class="signup-btn-link" style="color: white; text-decoration: none;">Inicio</a></div>
-</header>
+<header>Administración TUDECA</header>
+<main>
 
-<h2>Hoteles en TUDECA</h2>
-<div id="lista"></div>
+  <label for="tipo">Seleccione Tipo:</label>
+  <select id="tipo">
+    <option value="hoteles">Hotel</option>
+    <option value="restaurantes">Restaurante</option>
+    <option value="puntos_interes">Punto de Interés</option>
+  </select>
+
+  <form id="formLugar">
+    <input type="hidden" id="itemId" value="">
+
+    <label for="nombre">Nombre</label>
+    <input type="text" id="nombre" required />
+
+    <label for="estrellas">Estrellas (1 a 5)</label>
+    <input type="number" id="estrellas" min="1" max="5" required />
+
+    <label for="descripcion">Descripción</label>
+    <textarea id="descripcion" rows="3" required></textarea>
+
+    <label for="direccion">Dirección</label>
+    <input type="text" id="direccion" required />
+
+    <label for="iframe_mapa">Iframe de Google Maps</label>
+    <textarea id="iframe_mapa" rows="4" placeholder="Pega aquí el iframe de Google Maps" required></textarea>
+
+    <label for="imagen_url">URL de la Imagen</label>
+    <input type="text" id="imagen_url" placeholder="ej. /imagenes/hotel.jpg" required />
+
+    <button type="submit">Agregar / Actualizar</button>
+  </form>
+
+  <hr />
+
+  <h3>Lista de Lugares Agregados</h3>
+  <div id="lista"></div>
+</main>
 
 <script>
-  async function cargarHoteles() {
-    const res = await fetch('/api/hoteles');
+  const tipoSelect = document.getElementById('tipo');
+  const form = document.getElementById('formLugar');
+  const listaDiv = document.getElementById('lista');
+  const itemIdInput = document.getElementById('itemId');
+
+  async function cargarLista() {
+    const tipo = tipoSelect.value;
+    const res = await fetch(`/api/${tipo}`);
     const datos = await res.json();
-    const listaDiv = document.getElementById('lista');
+
     listaDiv.innerHTML = '';
 
     datos.forEach(item => {
-      const estrellas = '★'.repeat(item.estrellas) + '☆'.repeat(5 - item.estrellas);
       const card = document.createElement('div');
       card.className = 'card';
+
+      const estrellas = '★'.repeat(item.estrellas) + '☆'.repeat(5 - item.estrellas);
+
       card.innerHTML = `
-        <h4>${item.nombre}</h4>
-        <div class="stars">${estrellas}</div>
-        <div class="desc">${item.descripcion}</div>
-        <div class="direccion"><strong>Dirección:</strong> ${item.direccion}</div>
-        <a href="#" class="reserva-btn">Reserva</a>
+        <img src="${item.imagen_url || '/imagenes/default.jpg'}" alt="${item.nombre}">
+        <div class="card-content">
+          <h4>${item.nombre}</h4>
+          <div class="stars">${estrellas}</div>
+          <div class="desc">${item.descripcion}</div>
+          <div class="direccion"><strong>Dirección:</strong> ${item.direccion}</div>
+          ${item.iframe_mapa || ''}
+          <a href="#" class="reserva-btn">Reserva</a>
+          <div class="btn-group">
+            <button onclick="editar(${item.id})">Editar</button>
+            <button onclick="eliminar(${item.id})">Eliminar</button>
+          </div>
+        </div>
       `;
+
       listaDiv.appendChild(card);
     });
   }
 
-  cargarHoteles();
+  tipoSelect.addEventListener('change', () => {
+    limpiarFormulario();
+    cargarLista();
+  });
+
+  function limpiarFormulario() {
+    itemIdInput.value = '';
+    form.nombre.value = '';
+    form.estrellas.value = '';
+    form.descripcion.value = '';
+    form.direccion.value = '';
+    form.iframe_mapa.value = '';
+    form.imagen_url.value = '';
+  }
+
+  form.addEventListener('submit', async e => {
+    e.preventDefault();
+    const tipo = tipoSelect.value;
+
+    const data = {
+      nombre: form.nombre.value,
+      estrellas: parseInt(form.estrellas.value),
+      descripcion: form.descripcion.value,
+      direccion: form.direccion.value,
+      iframe_mapa: form.iframe_mapa.value,
+      imagen_url: form.imagen_url.value,
+    };
+
+    if (itemIdInput.value) {
+      const id = itemIdInput.value;
+      const res = await fetch(`/api/${tipo}/${id}`, {
+        method: 'PUT',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify(data),
+      });
+      if (res.ok) {
+        alert('Actualizado con éxito');
+        limpiarFormulario();
+        cargarLista();
+      } else {
+        alert('Error al actualizar');
+      }
+    } else {
+      const res = await fetch(`/api/${tipo}`, {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify(data),
+      });
+      if (res.ok) {
+        alert('Agregado con éxito');
+        limpiarFormulario();
+        cargarLista();
+      } else {
+        alert('Error al agregar');
+      }
+    }
+  });
+
+  window.editar = async function(id) {
+    const tipo = tipoSelect.value;
+    const res = await fetch(`/api/${tipo}`);
+    const datos = await res.json();
+    const item = datos.find(i => i.id === id);
+    if (!item) return alert('No encontrado');
+
+    itemIdInput.value = item.id;
+    form.nombre.value = item.nombre;
+    form.estrellas.value = item.estrellas;
+    form.descripcion.value = item.descripcion;
+    form.direccion.value = item.direccion;
+    form.iframe_mapa.value = item.iframe_mapa || '';
+    form.imagen_url.value = item.imagen_url || '';
+  };
+
+  window.eliminar = async function(id) {
+    const tipo = tipoSelect.value;
+    if (!confirm('¿Eliminar este registro?')) return;
+    const res = await fetch(`/api/${tipo}/${id}`, { method: 'DELETE' });
+    if (res.ok) {
+      alert('Eliminado');
+      cargarLista();
+    } else {
+      alert('Error al eliminar');
+    }
+  };
+
+  cargarLista();
 </script>
 
 </body>
