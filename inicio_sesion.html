@@ -83,6 +83,7 @@
         padding: 25px 30px;
         box-shadow: 0 0 5px rgba(0,0,0,0.1);
         text-align: center;
+        width: 320px;
     }
 
     .login-box h3 {
@@ -102,6 +103,7 @@
         width: 100%;
         padding: 8px;
         margin-bottom: 10px;
+        box-sizing: border-box;
     }
 
     .signin-btn {
@@ -112,6 +114,7 @@
         cursor: pointer;
         font-weight: bold;
         margin-top: 10px;
+        width: 100%;
     }
 
     .signin-btn:hover {
@@ -195,83 +198,44 @@
   </main>
 
   <script>
-const loginForm = document.getElementById('loginForm');
-const loginBox = document.getElementById('login-box');
-const userInfoBox = document.getElementById('user-info');
-const userNameSpan = document.getElementById('user-name');
-const userEmailSpan = document.getElementById('user-email');
-const errorMsg = document.getElementById('error-message');
-const logoutBtn = document.getElementById('logout-btn');
+    // Al cargar la página, verificamos si hay usuario autenticado
+    fetch('/perfil', {
+      credentials: 'include' // Enviar cookies / tokens
+    })
+    .then(async res => {
+      if (res.ok) {
+        const usuario = await res.json();
 
-async function checkLogin() {
-  try {
-    const res = await fetch('/me', {
-      credentials: 'include' // MUY IMPORTANTE para enviar cookies
+        // Ocultar login y mostrar info usuario
+        document.getElementById('login-box').style.display = 'none';
+        document.getElementById('user-info').style.display = 'block';
+
+        // Mostrar nombre y correo
+        document.getElementById('user-name').textContent = usuario.nombre + ' ' + usuario.apellido;
+        document.getElementById('user-email').textContent = usuario.correo;
+
+        // Asignar acción de logout
+        document.getElementById('logout-btn').onclick = () => {
+          fetch('/logout', {
+            method: 'POST',
+            credentials: 'include'
+          }).then(() => {
+            // Redirigir a login tras cerrar sesión
+            window.location.href = 'iniciar_sesion.html';
+          });
+        };
+
+      } else {
+        // No autenticado, mostrar login y ocultar info usuario
+        document.getElementById('login-box').style.display = 'block';
+        document.getElementById('user-info').style.display = 'none';
+      }
+    })
+    .catch(() => {
+      // En caso de error, mostrar login y ocultar info usuario
+      document.getElementById('login-box').style.display = 'block';
+      document.getElementById('user-info').style.display = 'none';
     });
-    if (res.ok) {
-      const user = await res.json();
-      loginBox.style.display = 'none';
-      userInfoBox.style.display = 'block';
-      userNameSpan.textContent = user.nombre || user.correo;
-      userEmailSpan.textContent = user.correo;
-    } else {
-      loginBox.style.display = 'block';
-      userInfoBox.style.display = 'none';
-    }
-  } catch {
-    loginBox.style.display = 'block';
-    userInfoBox.style.display = 'none';
-  }
-}
-
-checkLogin();
-
-loginForm.addEventListener('submit', async (e) => {
-  e.preventDefault();
-  const formData = new FormData(loginForm);
-  const data = Object.fromEntries(formData.entries());
-
-  try {
-    const res = await fetch('/login', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(data),
-      credentials: 'include'  // TAMBIÉN IMPORTANTE para guardar cookie
-    });
-
-    const result = await res.json();
-    if (res.ok) {
-      const rol = parseInt(result.rol);
-      errorMsg.style.color = 'green';
-      errorMsg.textContent = result.mensaje;
-
-      // Esperar que se establezca cookie antes de redirigir
-      setTimeout(() => {
-        if (rol === 1) {
-          window.location.href = 'admin.html';
-        } else {
-          window.location.href = 'index.html';
-        }
-      }, 300);
-    } else {
-      errorMsg.style.color = 'red';
-      errorMsg.textContent = result.message || result || 'Error desconocido';
-    }
-  } catch {
-    errorMsg.style.color = 'red';
-    errorMsg.textContent = 'Error de conexión';
-  }
-});
-
-logoutBtn?.addEventListener('click', async () => {
-  await fetch('/logout', { 
-    method: 'POST',
-    credentials: 'include'  // IMPORTANTE para que el servidor borre la cookie correcta
-  });
-  loginBox.style.display = 'block';
-  userInfoBox.style.display = 'none';
-  errorMsg.textContent = '';
-});
   </script>
 </body>
 </html>
