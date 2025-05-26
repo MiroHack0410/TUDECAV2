@@ -5,7 +5,6 @@ const jwt = require('jsonwebtoken');
 const bcrypt = require('bcryptjs');
 const cookieParser = require('cookie-parser');
 const cors = require('cors');
-const session = require('express-session'); // <-- agregado
 require('dotenv').config();
 
 const app = express();
@@ -17,9 +16,9 @@ const pool = new Pool({
   ssl: { rejectUnauthorized: false },
 });
 
-// CORS
+// CORS configurado para cookies y frontend
 app.use(cors({
-  origin: 'http://localhost:5173', // ⚠️ Cambia si usas otro frontend
+  origin: 'http://localhost:5173', // Cambia si usas otro frontend
   credentials: true,
 }));
 
@@ -27,16 +26,57 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
 
-app.use(session({   // <-- agregado middleware sesión
-  secret: 'tu-secreto-super-seguro', // cambia esto
-  resave: false,
-  saveUninitialized: false,
-  cookie: { maxAge: 24 * 60 * 60 * 1000 } // 1 día
-}));
-
 // Archivos estáticos
 app.use(express.static(__dirname));
 app.use('/Imagenes', express.static(path.join(__dirname, 'Imagenes')));
+
+// --- Middleware autenticación JWT ---
+function autenticado(req, res, next) {
+  const token = req.cookies.token;
+  if (!token) return res.status(401).send('No autenticado');
+  try {
+    req.usuario = jwt.verify(token, JWT_SECRET);
+    next();
+  } catch (err) {
+    console.log('Token inválido o expirado:', err.message);
+    res.status(401).send('Token inválido');
+  }
+}
+
+// --- Ruta para obtener datos del usuario logueado ---
+app.get('/perfil', autenticado, async (req, res) => {
+  try {
+    const userId = req.usuario.id;
+    const result = await pool.query('SELECT id, nombre, apellido, correo, telefono, sexo, rol FROM usuariosv2 WHERE id = $1', [userId]);
+    if (result.rows.length === 0) return res.status(404).send('Usuario no encontrado');
+    res.json(result.rows[0]);
+  } catch (err) {
+    res.status(500).send('Error del servidor');
+  }
+});
+
+// --- Login ---
+app.post('/login', async (req, res) => {
+  const { usuario, password } = req.body;
+  try {
+    const result = await pool.query('SELECT * FROM usuariosv2 WHERE correo = $1', [usuario]);
+    if (result.rows.length === 0) return res.status(401).send('No encontrado');
+    const user = result.rows[0];
+    const match = await bcrypt.compare(password, user.password);
+    if (!match) return res.status(401).send('Contraseña incorrecta');
+    const token = jwt.sign({ id: user.id, rol: user.rol }, JWT_SECRET, { expiresIn: '2h' });
+    res.cookie('token', token, { httpOnly: true, sameSite: 'lax' });
+    res.json({ mensaje: 'Login exitoso', rol: user.rol });
+  } catch (e) {
+    res.status(500).send('Error de servidor');
+  }
+});
+
+// --- Logout: elimina la cookie JWT ---
+app.post('/logout', (req, res) => {
+  res.clearCookie('token', { httpOnly: true, sameSite: 'lax' });
+  res.status(200).send('Logout exitoso');
+});
 
 // Agregar columnas si no existen
 async function agregarColumnas() {
