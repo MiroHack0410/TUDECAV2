@@ -1,0 +1,313 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <title>TUDECA - Reservas</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background-color: #e7f1df;
+      margin: 0;
+      padding: 0;
+    }
+
+    /* HEADER PERSONALIZADO */
+    .navbar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background-color: #5a9352;
+      padding: 10px 20px;
+    }
+
+    .dropdown {
+      position: relative;
+    }
+
+    .dropbtn {
+      background-color: #4a7946;
+      color: white;
+      padding: 10px;
+      font-size: 16px;
+      border: none;
+      cursor: pointer;
+    }
+
+    .dropdown-content {
+      display: none;
+      position: absolute;
+      background-color: #2d4729;
+      box-shadow: 0px 8px 16px rgba(0,0,0,0.2);
+      z-index: 1;
+    }
+
+    .dropdown-content a {
+      color: white;
+      padding: 12px 16px;
+      display: block;
+      text-decoration: none;
+    }
+
+    .dropdown-content a:hover {
+      background-color: #3e6142;
+    }
+
+    .dropdown:hover .dropdown-content {
+      display: block;
+    }
+
+    .title {
+      font-size: 24px;
+      color: black;
+      font-weight: bold;
+    }
+
+    .signup-btn-link {
+      color: white;
+      font-weight: bold;
+      text-decoration: none;
+      font-size: 16px;
+    }
+
+    main {
+      max-width: 900px;
+      margin: 40px auto;
+      padding: 0 20px;
+    }
+
+    .hotel-card {
+      background: white;
+      box-shadow: 0 0 5px rgba(0,0,0,0.1);
+      margin-bottom: 20px;
+      padding: 15px;
+      border-radius: 5px;
+    }
+
+    .btn-reservar, .btn-habitacion {
+      background-color: #256028;
+      color: white;
+      border: none;
+      padding: 8px 15px;
+      margin-top: 10px;
+      cursor: pointer;
+      border-radius: 3px;
+      font-weight: bold;
+      transition: background-color 0.3s ease;
+    }
+
+    .btn-reservar:hover, .btn-habitacion:hover {
+      background-color: #1d4c21;
+    }
+
+    #form-reserva {
+      background: white;
+      padding: 15px;
+      margin-top: 15px;
+      border-radius: 5px;
+      box-shadow: 0 0 5px rgba(0,0,0,0.1);
+      display: none;
+      max-width: 400px;
+    }
+
+    #form-reserva label {
+      display: block;
+      margin-top: 10px;
+      font-weight: bold;
+    }
+
+    #form-reserva input {
+      width: 100%;
+      padding: 7px;
+      margin-top: 5px;
+      box-sizing: border-box;
+      border: 1px solid #ccc;
+      border-radius: 3px;
+      font-size: 14px;
+    }
+
+    #form-reserva button {
+      width: 100%;
+      padding: 10px;
+      background-color: #256028;
+      color: white;
+      border: none;
+      font-weight: bold;
+      border-radius: 3px;
+      margin-top: 15px;
+      font-size: 16px;
+    }
+
+    #form-reserva button:hover {
+      background-color: #1d4c21;
+    }
+
+    #mensaje-reserva {
+      margin-top: 10px;
+      color: green;
+      font-weight: bold;
+    }
+
+    #error-reserva {
+      margin-top: 10px;
+      color: red;
+      font-weight: bold;
+    }
+  </style>
+</head>
+<body>
+
+<header>
+  <div class="navbar">
+    <div class="dropdown">
+      <button class="dropbtn">Menú ▼</button>
+      <div class="dropdown-content">
+        <a href="Hotel.html">Hoteles</a>
+        <a href="restaurantes.html">Restaurantes</a>
+        <a href="puntos_interes.html">Atracciones</a>
+      </div>
+    </div>
+    <div class="title">TUDECA</div>
+    <div><a href="index.html" class="signup-btn-link">Inicio</a></div>
+  </div>
+</header>
+
+<main>
+  <div id="hoteles-list"></div>
+  <div id="habitaciones-container"></div>
+
+  <form id="form-reserva">
+    <h3>Formulario de Reserva</h3>
+    <input type="hidden" id="hotel-id" />
+    <input type="hidden" id="habitacion-numero" />
+    <label for="nombre-huesped">Nombre del huésped:</label>
+    <input type="text" id="nombre-huesped" required />
+    <label for="correo-huesped">Correo:</label>
+    <input type="email" id="correo-huesped" required />
+    <label for="celular-huesped">Celular:</label>
+    <input type="tel" id="celular-huesped" required />
+    <label for="fecha-inicio">Fecha de inicio:</label>
+    <input type="date" id="fecha-inicio" required />
+    <label for="fecha-fin">Fecha de fin:</label>
+    <input type="date" id="fecha-fin" required />
+    <button type="submit">Reservar</button>
+    <div id="mensaje-reserva"></div>
+    <div id="error-reserva"></div>
+  </form>
+</main>
+
+<script>
+  async function estaAutenticado() {
+    try {
+      const res = await fetch('/perfil', { credentials: 'include' });
+      return res.ok;
+    } catch {
+      return false;
+    }
+  }
+
+  async function cargarHoteles() {
+    const contenedor = document.getElementById('hoteles-list');
+    contenedor.innerHTML = 'Cargando hoteles...';
+    try {
+      const res = await fetch('/hoteles');
+      if (!res.ok) throw new Error('Error al cargar hoteles');
+      const hoteles = await res.json();
+      contenedor.innerHTML = '';
+      hoteles.forEach(hotel => {
+        const card = document.createElement('div');
+        card.className = 'hotel-card';
+        card.innerHTML = `
+          <h3>${hotel.nombre}</h3>
+          <p>Ubicación: ${hotel.ubicacion}</p>
+          <p>Habitaciones disponibles: ${hotel.num_habitaciones}</p>
+          <button class="btn-reservar" data-hotel-id="${hotel.id}" data-habitaciones="${hotel.num_habitaciones}">Reservar</button>
+        `;
+        contenedor.appendChild(card);
+      });
+
+      document.querySelectorAll('.btn-reservar').forEach(btn => {
+        btn.addEventListener('click', async () => {
+          const autenticado = await estaAutenticado();
+          if (!autenticado) {
+            alert('Debes iniciar sesión para reservar.');
+            window.location.href = 'iniciar_sesion.html';
+            return;
+          }
+          const hotelId = btn.getAttribute('data-hotel-id');
+          const habitaciones = parseInt(btn.getAttribute('data-habitaciones'), 10);
+          mostrarHabitacionesDisponibles(hotelId, habitaciones);
+        });
+      });
+    } catch (err) {
+      contenedor.innerHTML = 'No se pudieron cargar los hoteles.';
+      console.error(err);
+    }
+  }
+
+  function mostrarHabitacionesDisponibles(hotelId, numHabitaciones) {
+    const contenedor = document.getElementById('habitaciones-container');
+    contenedor.innerHTML = `<h3>Seleccione una habitación</h3>`;
+    for (let i = 1; i <= numHabitaciones; i++) {
+      const btn = document.createElement('button');
+      btn.textContent = `Habitación ${i}`;
+      btn.className = 'btn-habitacion';
+      btn.addEventListener('click', () => mostrarFormularioReserva(hotelId, i));
+      contenedor.appendChild(btn);
+    }
+    document.getElementById('form-reserva').style.display = 'none';
+  }
+
+  function mostrarFormularioReserva(hotelId, habitacion) {
+    const form = document.getElementById('form-reserva');
+    document.getElementById('hotel-id').value = hotelId;
+    document.getElementById('habitacion-numero').value = habitacion;
+    form.reset();
+    document.getElementById('mensaje-reserva').textContent = '';
+    document.getElementById('error-reserva').textContent = '';
+    form.style.display = 'block';
+    form.scrollIntoView({ behavior: 'smooth' });
+  }
+
+  document.getElementById('form-reserva').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const datos = {
+      hotel_id: document.getElementById('hotel-id').value,
+      habitacion_numero: document.getElementById('habitacion-numero').value,
+      nombre_huesped: document.getElementById('nombre-huesped').value,
+      correo: document.getElementById('correo-huesped').value,
+      celular: document.getElementById('celular-huesped').value,
+      fecha_inicio: document.getElementById('fecha-inicio').value,
+      fecha_fin: document.getElementById('fecha-fin').value
+    };
+
+    if (datos.fecha_inicio > datos.fecha_fin) {
+      document.getElementById('error-reserva').textContent = 'La fecha de inicio debe ser menor a la de fin.';
+      return;
+    }
+
+    try {
+      const res = await fetch('/reservar', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify(datos)
+      });
+      if (res.ok) {
+        document.getElementById('mensaje-reserva').textContent = 'Reserva realizada con éxito.';
+        document.getElementById('error-reserva').textContent = '';
+        document.getElementById('form-reserva').reset();
+      } else {
+        const data = await res.json();
+        document.getElementById('error-reserva').textContent = data.error || 'Error al reservar.';
+      }
+    } catch (err) {
+      console.error(err);
+      document.getElementById('error-reserva').textContent = 'Error de conexión.';
+    }
+  });
+
+  cargarHoteles();
+</script>
+
+</body>
+</html>
