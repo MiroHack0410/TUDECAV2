@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Reservar Hotel</title>
   <style>
     body {
@@ -11,15 +11,14 @@
       margin: 0;
       padding: 0;
     }
-
     .navbar {
       display: flex;
       justify-content: space-between;
       align-items: center;
       background-color: #5a9352;
       padding: 10px 20px;
+      position: relative;
     }
-
     .title {
       position: absolute;
       left: 50%;
@@ -28,7 +27,6 @@
       color: white;
       font-weight: bold;
     }
-
     .signup-btn-link {
       display: inline-block;
       background-color: #5a9352;
@@ -38,42 +36,46 @@
       font-weight: bold;
       border-radius: 2px;
     }
-
     .signup-btn-link:hover {
       background-color: #4a7946;
     }
-
+    #lista-hoteles {
+      padding: 2rem;
+      max-width: 900px;
+      margin: 0 auto;
+    }
     .hotel {
       border: 1px solid #ccc;
       border-radius: 8px;
       padding: 1rem;
-      margin: 2rem;
+      margin-bottom: 2rem;
       background: #fff;
+      box-shadow: 0 0 8px rgba(0,0,0,0.1);
     }
-
     .hotel img {
       max-width: 100%;
       height: auto;
       border-radius: 5px;
+      margin-bottom: 1rem;
     }
-
     .formulario-reserva {
       margin-top: 1rem;
-      padding: 1rem;
+      padding-top: 1rem;
       border-top: 1px solid #ccc;
     }
-
     label {
       display: block;
       margin: 0.5rem 0 0.2rem;
+      font-weight: bold;
     }
-
     input, select {
       width: 100%;
       padding: 0.4rem;
       margin-bottom: 0.5rem;
+      border: 1px solid #aaa;
+      border-radius: 4px;
+      font-size: 1rem;
     }
-
     button {
       padding: 0.6rem 1rem;
       background-color: #007bff;
@@ -81,19 +83,22 @@
       border: none;
       border-radius: 4px;
       cursor: pointer;
+      font-weight: bold;
+      font-size: 1rem;
     }
-
     button:hover {
       background-color: #0056b3;
     }
-
-    #lista-hoteles {
-      padding-top: 1rem;
+    .mapa-iframe {
+      margin-top: 1rem;
+      width: 100%;
+      height: 250px;
+      border: none;
+      border-radius: 5px;
     }
   </style>
 </head>
 <body>
-
   <div class="navbar">
     <a href="Hotel.html" class="signup-btn-link">Volver</a>
     <div class="title">Hoteles disponibles para reservar</div>
@@ -106,6 +111,7 @@
     async function cargarHoteles() {
       try {
         const res = await fetch('/api/hoteles');
+        if (!res.ok) throw new Error('Error al obtener hoteles');
         const hoteles = await res.json();
         const contenedor = document.getElementById('lista-hoteles');
         contenedor.innerHTML = '';
@@ -119,29 +125,29 @@
             <p><strong>Estrellas:</strong> ${hotel.estrellas || 'No especificado'}</p>
             <p><strong>Descripción:</strong> ${hotel.descripcion || 'No disponible'}</p>
             <p><strong>Dirección:</strong> ${hotel.direccion || 'No disponible'}</p>
-            ${hotel.iframe_mapa ? `<div>${hotel.iframe_mapa}</div>` : ''}
+            ${hotel.iframe_mapa ? `<iframe class="mapa-iframe" srcdoc="${hotel.iframe_mapa}" loading="lazy"></iframe>` : ''}
             <form class="formulario-reserva" onsubmit="return enviarReserva(event, ${hotel.id})">
               <h3>Reservar este hotel</h3>
               <label>Nombre completo</label>
-              <input type="text" name="nombre" required>
+              <input type="text" name="nombre" required />
               <label>Correo electrónico</label>
-              <input type="email" name="correo" required>
+              <input type="email" name="correo" required />
               <label>Celular</label>
-              <input type="tel" name="celular" required>
+              <input type="tel" name="celular" required />
               <label>Fecha inicio</label>
-              <input type="date" name="fecha_inicio" required>
+              <input type="date" name="fecha_inicio" required />
               <label>Fecha fin</label>
-              <input type="date" name="fecha_fin" required>
+              <input type="date" name="fecha_fin" required />
               <label>Número de habitación</label>
-              <input type="number" name="num_habitacion" min="1" required>
+              <input type="number" name="num_habitacion" min="1" required />
               <button type="submit">Reservar</button>
             </form>
           `;
           contenedor.appendChild(div);
         });
-
       } catch (error) {
         console.error('Error al cargar hoteles:', error);
+        document.getElementById('lista-hoteles').innerHTML = '<p>Error al cargar hoteles.</p>';
       }
     }
 
@@ -149,9 +155,9 @@
       event.preventDefault();
       const form = event.target;
       const datos = {
-        nombre: form.nombre.value,
-        correo: form.correo.value,
-        celular: form.celular.value,
+        nombre: form.nombre.value.trim(),
+        correo: form.correo.value.trim(),
+        celular: form.celular.value.trim(),
         fecha_inicio: form.fecha_inicio.value,
         fecha_fin: form.fecha_fin.value,
         num_habitacion: form.num_habitacion.value,
@@ -170,7 +176,7 @@
           alert('Reserva realizada con éxito');
           form.reset();
         } else {
-          alert('Error: ' + result.message);
+          alert('Error: ' + (result.message || 'No se pudo completar la reserva'));
         }
       } catch (error) {
         alert('Error al reservar');
