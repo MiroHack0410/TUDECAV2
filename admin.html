@@ -159,7 +159,7 @@
     .btn-reservar:hover {
       background-color: #4a7946;
     }
-            .signup-btn-link {
+    #logout-btn {
             display: inline-block;
             background-color: #5a9352;
             color: white;
@@ -169,7 +169,7 @@
             border-radius: 2px;
         }
 
-        .signup-btn-link:hover {
+     #logout-btn:hover {
             background-color: #4a7946;
         }
   </style>
@@ -411,7 +411,7 @@
     };
 
     // Manejo del botón "Cerrar Sesión"
-    document.getElementById('signup-btn-link').onclick = async () => {
+    document.getElementById('logout-btn').onclick = async () => {
       try {
         const res = await fetch('/logout', { method: 'POST' });
         if (res.ok) {
