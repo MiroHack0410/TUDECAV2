@@ -1,4 +1,3 @@
-// Importación de librerías necesarias
 const express = require('express');
 const path = require('path');
 const { Pool } = require('pg');
@@ -12,28 +11,24 @@ const app = express();
 const PORT = process.env.PORT || 3000;
 const JWT_SECRET = process.env.JWT_SECRET || 'yajdielemirbaxinbaez0410';
 
-// Configuración conexión a base de datos PostgreSQL
 const pool = new Pool({
   connectionString: process.env.DATABASE_URL,
   ssl: { rejectUnauthorized: false },
 });
 
-// Configuración CORS para permitir cookies y comunicación con frontend en localhost:5173
 app.use(cors({
-  origin: 'http://localhost:5173',
+  origin: 'https://tudecafront.onrender.com',
   credentials: true,
 }));
 
-// Middleware para parsear JSON y datos urlencoded, cookies
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
 
-// Servir archivos estáticos (HTML, JS, CSS, imágenes)
 app.use(express.static(__dirname));
 app.use('/Imagenes', express.static(path.join(__dirname, 'Imagenes')));
 
-// Middleware para verificar autenticación por JWT desde cookies
+// Middleware JWT
 function autenticado(req, res, next) {
   const token = req.cookies.token;
   if (!token) return res.status(401).send('No autenticado');
@@ -46,13 +41,11 @@ function autenticado(req, res, next) {
   }
 }
 
-// Middleware para verificar que usuario sea admin (rol = 1)
 function esAdmin(req, res, next) {
   if (req.usuario?.rol !== 1) return res.status(403).send('Acceso denegado');
   next();
 }
 
-// Valida que el parámetro tipo coincida con una tabla válida
 const tablasValidas = {
   hoteles: 'hoteles',
   restaurantes: 'restaurantes',
@@ -65,9 +58,7 @@ function validarTipoLugar(req, res, next) {
   next();
 }
 
-// --- RUTAS ---
-
-// Registro de usuario (rol 2 por defecto)
+// Registro
 app.post('/registro', async (req, res) => {
   const { nombre, apellido, telefono, correo, sexo, password } = req.body;
   if (!nombre || !apellido || !correo || !password || !sexo) {
@@ -75,23 +66,22 @@ app.post('/registro', async (req, res) => {
   }
   try {
     const { rowCount } = await pool.query('SELECT 1 FROM usuariosv2 WHERE correo = $1', [correo]);
-    if (rowCount > 0) {
-      return res.status(409).json({ success: false, message: 'El correo ya está registrado' });
-    }
+    if (rowCount > 0) return res.status(409).json({ success: false, message: 'El correo ya está registrado' });
+
     const hashedPassword = await bcrypt.hash(password, 10);
     await pool.query(
       `INSERT INTO usuariosv2 (nombre, apellido, telefono, correo, sexo, password, rol)
        VALUES ($1, $2, $3, $4, $5, $6, 2)`,
       [nombre, apellido, telefono || '', correo, sexo, hashedPassword]
     );
-    return res.json({ success: true, message: 'Usuario registrado correctamente' });
+    res.json({ success: true, message: 'Usuario registrado correctamente' });
   } catch (error) {
     console.error('Error en /registro:', error);
-    return res.status(500).json({ success: false, message: 'Error interno del servidor' });
+    res.status(500).json({ success: false, message: 'Error interno del servidor' });
   }
 });
 
-// Login: valida usuario y genera JWT
+// Login
 app.post('/login', async (req, res) => {
   const { usuario, password } = req.body;
   try {
@@ -100,35 +90,47 @@ app.post('/login', async (req, res) => {
     const user = result.rows[0];
     const match = await bcrypt.compare(password, user.password);
     if (!match) return res.status(401).send('Contraseña incorrecta');
+
     const token = jwt.sign({ id: user.id, rol: user.rol }, JWT_SECRET, { expiresIn: '2h' });
-    res.cookie('token', token, { httpOnly: true, sameSite: 'lax' });
+    res.cookie('token', token, {
+      httpOnly: true,
+      sameSite: 'lax',
+      secure: true, // Importante para producción en HTTPS
+    });
     res.json({ mensaje: 'Login exitoso', rol: user.rol });
   } catch (e) {
+    console.error('Error en /login:', e.message);
     res.status(500).send('Error de servidor');
   }
 });
 
-// Logout: elimina cookie JWT
+// Logout
 app.post('/logout', (req, res) => {
-  res.clearCookie('token', { httpOnly: true, sameSite: 'lax' });
+  res.clearCookie('token', {
+    httpOnly: true,
+    sameSite: 'lax',
+    secure: true,
+  });
   res.status(200).send('Logout exitoso');
 });
 
-// Obtener perfil usuario autenticado
+// Perfil
 app.get('/perfil', autenticado, async (req, res) => {
   try {
     const userId = req.usuario.id;
-    const result = await pool.query('SELECT id, nombre, apellido, correo, telefono, sexo, rol FROM usuariosv2 WHERE id = $1', [userId]);
+    const result = await pool.query(
+      'SELECT id, nombre, apellido, correo, telefono, sexo, rol FROM usuariosv2 WHERE id = $1',
+      [userId]
+    );
     if (result.rows.length === 0) return res.status(404).send('Usuario no encontrado');
     res.json(result.rows[0]);
   } catch (err) {
+    console.error('Error en /perfil:', err.message);
     res.status(500).send('Error del servidor');
   }
 });
 
-// CRUD para hoteles, restaurantes y puntos de interés
-
-// Obtener lista (todos registros) por tipo
+// GET todos
 app.get('/api/:tipo', validarTipoLugar, async (req, res) => {
   try {
     const result = await pool.query(`SELECT * FROM ${req.tabla} ORDER BY id DESC`);
@@ -138,7 +140,7 @@ app.get('/api/:tipo', validarTipoLugar, async (req, res) => {
   }
 });
 
-// Obtener un registro por ID
+// GET uno
 app.get('/api/:tipo/:id', validarTipoLugar, async (req, res) => {
   try {
     const result = await pool.query(`SELECT * FROM ${req.tabla} WHERE id = $1`, [req.params.id]);
@@ -149,79 +151,53 @@ app.get('/api/:tipo/:id', validarTipoLugar, async (req, res) => {
   }
 });
 
-// Insertar nuevo registro (solo admin)
+// POST crear
 app.post('/api/:tipo', autenticado, esAdmin, validarTipoLugar, async (req, res) => {
   const { nombre, estrellas, descripcion, direccion, iframe_mapa, imagen_url, num_habitaciones } = req.body;
-
   if (!nombre) return res.status(400).send('Falta nombre');
 
-  let query = '';
-  let params = [];
-
-  if (req.tabla === 'hoteles') {
-    query = `INSERT INTO hoteles (nombre, estrellas, descripcion, direccion, iframe_mapa, imagen_url, num_habitaciones)
-             VALUES ($1,$2,$3,$4,$5,$6,$7) RETURNING *`;
-    params = [nombre, estrellas || null, descripcion || null, direccion || null, iframe_mapa || null, imagen_url || null, num_habitaciones || null];
-  } else {
-    query = `INSERT INTO ${req.tabla} (nombre, estrellas, descripcion, direccion, iframe_mapa, imagen_url)
-             VALUES ($1,$2,$3,$4,$5,$6) RETURNING *`;
-    params = [nombre, estrellas || null, descripcion || null, direccion || null, iframe_mapa || null, imagen_url || null];
-  }
-
   try {
-    const result = await pool.query(query, params);
+    const campos = req.tabla === 'hoteles'
+      ? [nombre, estrellas || null, descripcion || null, direccion || null, iframe_mapa || null, imagen_url || null, num_habitaciones || null]
+      : [nombre, estrellas || null, descripcion || null, direccion || null, iframe_mapa || null, imagen_url || null];
+    const query = req.tabla === 'hoteles'
+      ? `INSERT INTO hoteles (nombre, estrellas, descripcion, direccion, iframe_mapa, imagen_url, num_habitaciones)
+         VALUES ($1,$2,$3,$4,$5,$6,$7) RETURNING *`
+      : `INSERT INTO ${req.tabla} (nombre, estrellas, descripcion, direccion, iframe_mapa, imagen_url)
+         VALUES ($1,$2,$3,$4,$5,$6) RETURNING *`;
+
+    const result = await pool.query(query, campos);
     res.json({ success: true, data: result.rows[0] });
   } catch (error) {
+    console.error('Error en POST /api:', error.message);
     res.status(500).send('Error al insertar');
   }
 });
 
-// Actualizar registro (solo admin)
+// PUT actualizar
 app.put('/api/:tipo/:id', autenticado, esAdmin, validarTipoLugar, async (req, res) => {
   const { nombre, estrellas, descripcion, direccion, iframe_mapa, imagen_url, num_habitaciones } = req.body;
   const id = req.params.id;
 
   try {
-    // Verificar que el registro exista
     const exist = await pool.query(`SELECT * FROM ${req.tabla} WHERE id = $1`, [id]);
     if (exist.rows.length === 0) return res.status(404).send('No encontrado');
 
-    let query = '';
-    let params = [];
+    const campos = req.tabla === 'hoteles'
+      ? [nombre, estrellas, descripcion, direccion, iframe_mapa, imagen_url, num_habitaciones, id]
+      : [nombre, estrellas, descripcion, direccion, iframe_mapa, imagen_url, id];
+    const query = req.tabla === 'hoteles'
+      ? `UPDATE hoteles SET nombre=$1, estrellas=$2, descripcion=$3, direccion=$4, iframe_mapa=$5, imagen_url=$6, num_habitaciones=$7 WHERE id=$8 RETURNING *`
+      : `UPDATE ${req.tabla} SET nombre=$1, estrellas=$2, descripcion=$3, direccion=$4, iframe_mapa=$5, imagen_url=$6 WHERE id=$7 RETURNING *`;
 
-    if (req.tabla === 'hoteles') {
-      query = `
-        UPDATE hoteles SET
-          nombre = $1,
-          estrellas = $2,
-          descripcion = $3,
-          direccion = $4,
-          iframe_mapa = $5,
-          imagen_url = $6,
-          num_habitaciones = $7
-        WHERE id = $8 RETURNING *`;
-      params = [nombre, estrellas, descripcion, direccion, iframe_mapa, imagen_url, num_habitaciones, id];
-    } else {
-      query = `
-        UPDATE ${req.tabla} SET
-          nombre = $1,
-          estrellas = $2,
-          descripcion = $3,
-          direccion = $4,
-          iframe_mapa = $5,
-          imagen_url = $6
-        WHERE id = $7 RETURNING *`;
-      params = [nombre, estrellas, descripcion, direccion, iframe_mapa, imagen_url, id];
-    }
-
-    const result = await pool.query(query, params);
+    const result = await pool.query(query, campos);
     res.json({ success: true, data: result.rows[0] });
   } catch (error) {
     res.status(500).send('Error al actualizar');
   }
 });
 
-// Eliminar registro (solo admin)
+// DELETE eliminar
 app.delete('/api/:tipo/:id', autenticado, esAdmin, validarTipoLugar, async (req, res) => {
   try {
     const id = req.params.id;
@@ -233,9 +209,7 @@ app.delete('/api/:tipo/:id', autenticado, esAdmin, validarTipoLugar, async (req,
   }
 });
 
-// Reservas
-
-// Crear reserva (abierto, no requiere login)
+// Crear reserva
 app.post('/reservar', async (req, res) => {
   const { nombre, correo, celular, fecha_inicio, fecha_fin, num_habitacion, id_hotel } = req.body;
   if (!nombre || !correo || !celular || !fecha_inicio || !fecha_fin || !num_habitacion || !id_hotel) {
@@ -253,7 +227,7 @@ app.post('/reservar', async (req, res) => {
   }
 });
 
-// Obtener reservas (solo admin)
+// Obtener todas las reservas (admin)
 app.get('/reservas', autenticado, esAdmin, async (req, res) => {
   try {
     const result = await pool.query('SELECT * FROM reserva ORDER BY id DESC');
@@ -263,23 +237,21 @@ app.get('/reservas', autenticado, esAdmin, async (req, res) => {
   }
 });
 
-// Obtener habitaciones reservadas para un hotel específico
+// Obtener habitaciones reservadas por hotel
 app.get('/reservas/habitaciones/:id_hotel', async (req, res) => {
-  const id_hotel = req.params.id_hotel;
   try {
     const result = await pool.query(
       `SELECT num_habitacion FROM reserva WHERE hotel_id = $1`,
-      [id_hotel]
+      [req.params.id_hotel]
     );
-    // Devuelve un array con números de habitación reservadas
     res.json(result.rows.map(r => r.num_habitacion));
   } catch (error) {
     res.status(500).send('Error al obtener habitaciones reservadas');
   }
 });
 
-
-// --- Servidor escucha ---
+// Servidor en escucha
 app.listen(PORT, () => {
   console.log(`Servidor iniciado en puerto ${PORT}`);
 });
+
