@@ -64,11 +64,14 @@
       color: green;
     }
 
-    .title {
-        font-size: 24px;
-        color: black;
-        font-weight: bold;
-    }
+.title {
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+  font-size: 24px;
+  color: white;
+  font-weight: bold;
+}
         .signup-btn-link {
             display: inline-block;
             background-color: #5a9352;
@@ -93,12 +96,10 @@
   </style>
 </head>
 <body>
-    <header>
     <div class="navbar">
       <div class="title">TUDECA</div>
       <div><a href="index.html" class="signup-btn-link">Inicio</a></div>
     </div>
-  </header>
   <h2>Reservar Habitación</h2>
 
   <label for="hotelSelect">Selecciona un hotel:</label>
