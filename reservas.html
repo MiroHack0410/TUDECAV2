@@ -60,9 +60,14 @@
     }
     .habitaciones {
       margin: 1rem 0;
-      display: flex;
-      flex-wrap: wrap;
-      justify-content: center;
+    }
+    .habitaciones .titulo-habitaciones {
+      font-weight: bold;
+      margin-bottom: 0.5rem;
+    }
+    .habitaciones .botones-habitaciones {
+      display: grid;
+      grid-template-columns: repeat(5, 1fr);
       gap: 10px;
     }
     .habitaciones button {
@@ -70,10 +75,12 @@
       color: white;
       border: none;
       border-radius: 4px;
-      padding: 10px 20px;
+      padding: 10px 0;
       font-weight: bold;
       cursor: pointer;
       transition: background-color 0.3s ease;
+      width: 100%;
+      text-align: center;
     }
     .habitaciones button:hover:not(:disabled) {
       background-color: #4a7946;
@@ -134,12 +141,6 @@
       color: white;
       border: none;
       border-radius: 4px;
-      cursor: pointer;
-      font-weight: bold;
-      transition: background-color 0.3s ease;
-    }
-    form button:hover {
-      background-color: #218838;
     }
   </style>
 </head>
@@ -183,13 +184,20 @@
         const contenedor = document.getElementById('lista-hoteles');
         contenedor.innerHTML = '';
 
+        // Obtener reservas existentes para habilitar/deshabilitar botones
+        const resReservas = await fetch('/api/reservas');
+        const reservas = await resReservas.json();
+
         hoteles.forEach(hotel => {
           const habitaciones = Array.from({ length: Number(hotel.num_habitaciones) || 1 }, (_, i) => i + 1);
-          const reservadas = hotel.habitaciones_reservadas || [];
+
+          // Filtrar habitaciones reservadas para este hotel
+          const reservadas = reservas
+            .filter(r => r.id_hotel === hotel.id)
+            .map(r => r.num_habitacion);
 
           const div = document.createElement('div');
           div.className = 'hotel';
-
           div.innerHTML = `
             <h2>${hotel.nombre}</h2>
             ${hotel.imagen_url ? `<img src="${hotel.imagen_url}" alt="${hotel.nombre}">` : ''}
@@ -198,13 +206,15 @@
             <p><strong>Dirección:</strong> ${hotel.direccion || 'No disponible'}</p>
             ${hotel.iframe_mapa ? `<div class="mapa">${hotel.iframe_mapa}</div>` : ''}
             <div class="habitaciones">
-              <strong>Selecciona una habitación:</strong><br/>
-              ${habitaciones.map(num => {
-                const estaReservada = reservadas.includes(num);
-                return `<button ${estaReservada ? 'disabled' : ''} onclick="abrirModal(${hotel.id}, ${num})">
-                  Habitación ${num}${estaReservada ? ' (Reservada)' : ''}
-                </button>`;
-              }).join('')}
+              <div class="titulo-habitaciones">Selecciona una habitación:</div>
+              <div class="botones-habitaciones">
+                ${habitaciones.map(num => {
+                  const estaReservada = reservadas.includes(num);
+                  return `<button ${estaReservada ? 'disabled' : ''} onclick="abrirModal(${hotel.id}, ${num})">
+                    Habitación ${num}${estaReservada ? ' (Reservada)' : ''}
+                  </button>`;
+                }).join('')}
+              </div>
             </div>
           `;
           contenedor.appendChild(div);
@@ -229,8 +239,8 @@
     async function enviarReserva(event) {
       event.preventDefault();
       const datos = {
-        id_hotel: document.getElementById('hotelId').value,
-        num_habitacion: document.getElementById('habitacionNum').value,
+        id_hotel: Number(document.getElementById('hotelId').value),
+        num_habitacion: Number(document.getElementById('habitacionNum').value),
         nombre: document.getElementById('nombre').value.trim(),
         correo: document.getElementById('correo').value.trim(),
         celular: document.getElementById('celular').value.trim(),
@@ -249,7 +259,7 @@
         if (result.success) {
           alert('Reserva realizada con éxito');
           cerrarModal();
-          cargarHoteles(); // Recarga para actualizar botones reservados
+          cargarHoteles();  // refrescar para actualizar botones
         } else {
           alert('Error: ' + (result.message || 'No se pudo completar la reserva'));
         }
