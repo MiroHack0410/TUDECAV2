@@ -60,18 +60,28 @@
     }
     .habitaciones {
       margin: 1rem 0;
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 10px;
     }
     .habitaciones button {
-      margin: 0.3rem;
-      padding: 0.5rem 1rem;
-      border: none;
-      background-color: #007bff;
+      background-color: #5a9352;
       color: white;
+      border: none;
       border-radius: 4px;
+      padding: 10px 20px;
+      font-weight: bold;
       cursor: pointer;
+      transition: background-color 0.3s ease;
     }
-    .habitaciones button:hover {
-      background-color: #0056b3;
+    .habitaciones button:hover:not(:disabled) {
+      background-color: #4a7946;
+    }
+    .habitaciones button:disabled {
+      background-color: #cc0000;
+      cursor: not-allowed;
+      opacity: 0.7;
     }
 
     .mapa iframe {
@@ -124,6 +134,12 @@
       color: white;
       border: none;
       border-radius: 4px;
+      cursor: pointer;
+      font-weight: bold;
+      transition: background-color 0.3s ease;
+    }
+    form button:hover {
+      background-color: #218838;
     }
   </style>
 </head>
@@ -168,10 +184,12 @@
         contenedor.innerHTML = '';
 
         hoteles.forEach(hotel => {
-        const habitaciones = Array.from({ length: Number(hotel.num_habitaciones) || 1 }, (_, i) => i + 1);
+          const habitaciones = Array.from({ length: Number(hotel.num_habitaciones) || 1 }, (_, i) => i + 1);
+          const reservadas = hotel.habitaciones_reservadas || [];
 
           const div = document.createElement('div');
           div.className = 'hotel';
+
           div.innerHTML = `
             <h2>${hotel.nombre}</h2>
             ${hotel.imagen_url ? `<img src="${hotel.imagen_url}" alt="${hotel.nombre}">` : ''}
@@ -181,7 +199,12 @@
             ${hotel.iframe_mapa ? `<div class="mapa">${hotel.iframe_mapa}</div>` : ''}
             <div class="habitaciones">
               <strong>Selecciona una habitación:</strong><br/>
-              ${habitaciones.map(num => `<button onclick="abrirModal(${hotel.id}, ${num})">Habitación ${num}</button>`).join('')}
+              ${habitaciones.map(num => {
+                const estaReservada = reservadas.includes(num);
+                return `<button ${estaReservada ? 'disabled' : ''} onclick="abrirModal(${hotel.id}, ${num})">
+                  Habitación ${num}${estaReservada ? ' (Reservada)' : ''}
+                </button>`;
+              }).join('')}
             </div>
           `;
           contenedor.appendChild(div);
@@ -226,6 +249,7 @@
         if (result.success) {
           alert('Reserva realizada con éxito');
           cerrarModal();
+          cargarHoteles(); // Recarga para actualizar botones reservados
         } else {
           alert('Error: ' + (result.message || 'No se pudo completar la reserva'));
         }
