@@ -168,7 +168,7 @@
         contenedor.innerHTML = '';
 
         hoteles.forEach(hotel => {
-          const habitaciones = Array.from({ hotel.num_habitaciones || 5 }, (_, i) => i + 1); // si no hay campo, pone 5
+        const habitaciones = Array.from({ length: Number(hotel.num_habitaciones) || 1 }, (_, i) => i + 1);
 
           const div = document.createElement('div');
           div.className = 'hotel';
