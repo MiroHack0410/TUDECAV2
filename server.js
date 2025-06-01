@@ -263,6 +263,22 @@ app.get('/reservas', autenticado, esAdmin, async (req, res) => {
   }
 });
 
+// Obtener habitaciones reservadas para un hotel específico
+app.get('/reservas/habitaciones/:id_hotel', async (req, res) => {
+  const id_hotel = req.params.id_hotel;
+  try {
+    const result = await pool.query(
+      `SELECT num_habitacion FROM reserva WHERE hotel_id = $1`,
+      [id_hotel]
+    );
+    // Devuelve un array con números de habitación reservadas
+    res.json(result.rows.map(r => r.num_habitacion));
+  } catch (error) {
+    res.status(500).send('Error al obtener habitaciones reservadas');
+  }
+});
+
+
 // --- Servidor escucha ---
 app.listen(PORT, () => {
   console.log(`Servidor iniciado en puerto ${PORT}`);
