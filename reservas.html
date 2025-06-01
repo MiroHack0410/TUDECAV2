@@ -125,7 +125,7 @@
             <p><strong>Estrellas:</strong> ${hotel.estrellas || 'No especificado'}</p>
             <p><strong>Descripción:</strong> ${hotel.descripcion || 'No disponible'}</p>
             <p><strong>Dirección:</strong> ${hotel.direccion || 'No disponible'}</p>
-            ${hotel.iframe_mapa ? `<iframe class="mapa-iframe" srcdoc="${hotel.iframe_mapa}" loading="lazy"></iframe>` : ''}
+            ${hotel.iframe_mapa ? `<iframe class="mapa-iframe" src="${hotel.iframe_mapa}" loading="lazy"></iframe>` : ''}
             <form class="formulario-reserva" onsubmit="return enviarReserva(event, ${hotel.id})">
               <h3>Reservar este hotel</h3>
               <label>Nombre completo</label>
