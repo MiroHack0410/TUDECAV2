@@ -20,7 +20,7 @@ const pool = new Pool({
 
 app.use(cors({
   origin: 'https://tudecafront.onrender.com', // Cambiar por tu frontend real
-  credentials: true,
+  credentials: 'include',
 }));
 
 app.use(express.json());
@@ -117,8 +117,8 @@ app.post('/login', async (req, res) => {
     const token = jwt.sign({ id: user.id, rol: user.rol }, JWT_SECRET, { expiresIn: '2h' });
     res.cookie('token', token, {
     httpOnly: false,   // <-- IMPORTANTE
-    sameSite: 'Lax',
-    secure: false      // true si usas HTTPS
+    sameSite: 'None',
+    secure: true      // true si usas HTTPS
     });
 
     res.json({ mensaje: 'Login exitoso', rol: user.rol });
