@@ -5,22 +5,24 @@ const jwt = require('jsonwebtoken');
 const bcrypt = require('bcryptjs');
 const cookieParser = require('cookie-parser');
 const cors = require('cors');
-const http = require('http');               // Agregado para socket.io
-const { Server } = require('socket.io');    // Agregado para socket.io
+const http = require('http');
+const { Server } = require('socket.io');
 require('dotenv').config();
 
 const app = express();
 const PORT = process.env.PORT || 3000;
 const JWT_SECRET = process.env.JWT_SECRET || 'yajdielemirbaxinbaez0410';
 
+const isProduction = process.env.NODE_ENV === 'production';
+
 const pool = new Pool({
   connectionString: process.env.DATABASE_URL,
-  ssl: { rejectUnauthorized: false },
+  ssl: isProduction ? { rejectUnauthorized: false } : false,
 });
 
 app.use(cors({
-  origin: 'https://tudecafront.onrender.com', // Cambiar por tu frontend real
-  credentials: 'include',
+  origin: 'https://tudecafront.onrender.com', // Cambia a tu frontend real
+  credentials: true,
 }));
 
 app.use(express.json());
@@ -30,19 +32,16 @@ app.use(cookieParser());
 app.use(express.static(__dirname));
 app.use('/Imagenes', express.static(path.join(__dirname, 'Imagenes')));
 
-// Crear servidor HTTP con Express
 const server = http.createServer(app);
 
-// Configurar socket.io
 const io = new Server(server, {
   cors: {
-    origin: 'https://tudecafront.onrender.com', // Cambiar por tu frontend real
+    origin: 'https://tudecafront.onrender.com',
     methods: ['GET', 'POST'],
     credentials: true,
   }
 });
 
-// Escuchar conexiones socket.io
 io.on('connection', (socket) => {
   console.log('Usuario conectado con socket id:', socket.id);
 
@@ -51,7 +50,7 @@ io.on('connection', (socket) => {
   });
 });
 
-// Middleware JWT
+// Middleware para validar JWT en cookie
 function autenticado(req, res, next) {
   const token = req.cookies.token;
   if (!token) return res.status(401).send('No autenticado');
@@ -74,6 +73,7 @@ const tablasValidas = {
   restaurantes: 'restaurantes',
   puntos_interes: 'puntos_interes',
 };
+
 function validarTipoLugar(req, res, next) {
   const { tipo } = req.params;
   if (!tablasValidas[tipo]) return res.status(400).send('Tipo inválido');
@@ -81,7 +81,7 @@ function validarTipoLugar(req, res, next) {
   next();
 }
 
-// Registro
+// Registro de usuario
 app.post('/registro', async (req, res) => {
   const { nombre, apellido, telefono, correo, sexo, password } = req.body;
   if (!nombre || !apellido || !correo || !password || !sexo) {
@@ -116,9 +116,10 @@ app.post('/login', async (req, res) => {
 
     const token = jwt.sign({ id: user.id, rol: user.rol }, JWT_SECRET, { expiresIn: '2h' });
     res.cookie('token', token, {
-    httpOnly: false,   // <-- IMPORTANTE
-    sameSite: 'None',
-    secure: true      // true si usas HTTPS
+      httpOnly: false,
+      sameSite: isProduction ? 'None' : 'Lax',
+      secure: isProduction,
+      maxAge: 2 * 60 * 60 * 1000,
     });
 
     res.json({ mensaje: 'Login exitoso', rol: user.rol });
@@ -131,9 +132,9 @@ app.post('/login', async (req, res) => {
 // Logout
 app.post('/logout', (req, res) => {
   res.clearCookie('token', {
-    httpOnly: true,
-    sameSite: 'lax',
-    secure: true,
+    httpOnly: false,
+    sameSite: isProduction ? 'None' : 'Lax',
+    secure: isProduction,
   });
   res.status(200).send('Logout exitoso');
 });
@@ -154,130 +155,193 @@ app.get('/perfil', autenticado, async (req, res) => {
   }
 });
 
-// GET todos
+// Listar todos los usuarios (solo admin)
+app.get('/usuarios', autenticado, esAdmin, async (req, res) => {
+  try {
+    const result = await pool.query('SELECT * FROM usuariosv2');
+    res.json(result.rows);
+  } catch (e) {
+    res.status(500).send('Error del servidor');
+  }
+});
+
+// Obtener un usuario por id (solo admin)
+app.get('/usuarios/:id', autenticado, esAdmin, async (req, res) => {
+  try {
+    const id = parseInt(req.params.id);
+    const result = await pool.query('SELECT * FROM usuariosv2 WHERE id = $1', [id]);
+    if (result.rows.length === 0) return res.status(404).send('Usuario no encontrado');
+    res.json(result.rows[0]);
+  } catch (e) {
+    res.status(500).send('Error del servidor');
+  }
+});
+
+// Editar usuario (solo admin)
+app.put('/usuarios/:id', autenticado, esAdmin, async (req, res) => {
+  try {
+    const id = parseInt(req.params.id);
+    const { nombre, apellido, telefono, correo, sexo, rol } = req.body;
+    const result = await pool.query(
+      `UPDATE usuariosv2 SET nombre=$1, apellido=$2, telefono=$3, correo=$4, sexo=$5, rol=$6 WHERE id=$7 RETURNING *`,
+      [nombre, apellido, telefono, correo, sexo, rol, id]
+    );
+    if (result.rows.length === 0) return res.status(404).send('Usuario no encontrado');
+    res.json(result.rows[0]);
+  } catch (e) {
+    res.status(500).send('Error del servidor');
+  }
+});
+
+// Eliminar usuario (solo admin)
+app.delete('/usuarios/:id', autenticado, esAdmin, async (req, res) => {
+  try {
+    const id = parseInt(req.params.id);
+    const result = await pool.query('DELETE FROM usuariosv2 WHERE id = $1 RETURNING *', [id]);
+    if (result.rows.length === 0) return res.status(404).send('Usuario no encontrado');
+    res.send('Usuario eliminado');
+  } catch (e) {
+    res.status(500).send('Error del servidor');
+  }
+});
+
+// Obtener lista general (hoteles, restaurantes, puntos de interés)
 app.get('/api/:tipo', validarTipoLugar, async (req, res) => {
   try {
-    const result = await pool.query(`SELECT * FROM ${req.tabla} ORDER BY id DESC`);
+    const tabla = req.tabla;
+    const result = await pool.query(`SELECT * FROM ${tabla}`);
     res.json(result.rows);
-  } catch {
-    res.status(500).send('Error al obtener');
+  } catch (e) {
+    console.error(e);
+    res.status(500).send('Error del servidor');
   }
 });
 
-// GET uno
+// Obtener item por id (hoteles, restaurantes, puntos de interés)
 app.get('/api/:tipo/:id', validarTipoLugar, async (req, res) => {
   try {
-    const result = await pool.query(`SELECT * FROM ${req.tabla} WHERE id = $1`, [req.params.id]);
+    const tabla = req.tabla;
+    const id = parseInt(req.params.id);
+    const result = await pool.query(`SELECT * FROM ${tabla} WHERE id = $1`, [id]);
     if (result.rows.length === 0) return res.status(404).send('No encontrado');
     res.json(result.rows[0]);
-  } catch {
-    res.status(500).send('Error al obtener');
+  } catch (e) {
+    res.status(500).send('Error del servidor');
   }
 });
 
-// POST crear
+// Agregar nuevo item (solo admin)
 app.post('/api/:tipo', autenticado, esAdmin, validarTipoLugar, async (req, res) => {
-  const { nombre, estrellas, descripcion, direccion, iframe_mapa, imagen_url, num_habitaciones } = req.body;
-  if (!nombre) return res.status(400).send('Falta nombre');
-
   try {
-    const campos = req.tabla === 'hoteles'
-      ? [nombre, estrellas || null, descripcion || null, direccion || null, iframe_mapa || null, imagen_url || null, num_habitaciones || null]
-      : [nombre, estrellas || null, descripcion || null, direccion || null, iframe_mapa || null, imagen_url || null];
-    const query = req.tabla === 'hoteles'
-      ? `INSERT INTO hoteles (nombre, estrellas, descripcion, direccion, iframe_mapa, imagen_url, num_habitaciones)
-         VALUES ($1,$2,$3,$4,$5,$6,$7) RETURNING *`
-      : `INSERT INTO ${req.tabla} (nombre, estrellas, descripcion, direccion, iframe_mapa, imagen_url)
-         VALUES ($1,$2,$3,$4,$5,$6) RETURNING *`;
+    const tabla = req.tabla;
+    // Para simplificar, asumo que recibes todas las columnas que necesites en req.body
+    const cols = Object.keys(req.body);
+    const vals = Object.values(req.body);
 
-    const result = await pool.query(query, campos);
-    res.json({ success: true, data: result.rows[0] });
-  } catch (error) {
-    console.error('Error en POST /api:', error.message);
+    const query = `
+      INSERT INTO ${tabla} (${cols.join(',')})
+      VALUES (${cols.map((_, i) => `$${i + 1}`).join(',')})
+      RETURNING *`;
+    const result = await pool.query(query, vals);
+    res.json(result.rows[0]);
+  } catch (e) {
+    console.error(e);
     res.status(500).send('Error al insertar');
   }
 });
 
-// PUT actualizar
+// Editar item (solo admin)
 app.put('/api/:tipo/:id', autenticado, esAdmin, validarTipoLugar, async (req, res) => {
-  const { nombre, estrellas, descripcion, direccion, iframe_mapa, imagen_url, num_habitaciones } = req.body;
-  const id = req.params.id;
-
   try {
-    const exist = await pool.query(`SELECT * FROM ${req.tabla} WHERE id = $1`, [id]);
-    if (exist.rows.length === 0) return res.status(404).send('No encontrado');
+    const tabla = req.tabla;
+    const id = parseInt(req.params.id);
+    const cols = Object.keys(req.body);
+    const vals = Object.values(req.body);
+    if (cols.length === 0) return res.status(400).send('No hay datos para actualizar');
 
-    const campos = req.tabla === 'hoteles'
-      ? [nombre, estrellas, descripcion, direccion, iframe_mapa, imagen_url, num_habitaciones, id]
-      : [nombre, estrellas, descripcion, direccion, iframe_mapa, imagen_url, id];
-    const query = req.tabla === 'hoteles'
-      ? `UPDATE hoteles SET nombre=$1, estrellas=$2, descripcion=$3, direccion=$4, iframe_mapa=$5, imagen_url=$6, num_habitaciones=$7 WHERE id=$8 RETURNING *`
-      : `UPDATE ${req.tabla} SET nombre=$1, estrellas=$2, descripcion=$3, direccion=$4, iframe_mapa=$5, imagen_url=$6 WHERE id=$7 RETURNING *`;
-
-    const result = await pool.query(query, campos);
-    res.json({ success: true, data: result.rows[0] });
-  } catch (error) {
+    const sets = cols.map((col, i) => `${col}=$${i + 1}`).join(',');
+    const query = `UPDATE ${tabla} SET ${sets} WHERE id=$${cols.length + 1} RETURNING *`;
+    const result = await pool.query(query, [...vals, id]);
+    if (result.rows.length === 0) return res.status(404).send('No encontrado');
+    res.json(result.rows[0]);
+  } catch (e) {
     res.status(500).send('Error al actualizar');
   }
 });
 
-// DELETE eliminar
+// Eliminar item (solo admin)
 app.delete('/api/:tipo/:id', autenticado, esAdmin, validarTipoLugar, async (req, res) => {
   try {
-    const id = req.params.id;
-    const result = await pool.query(`DELETE FROM ${req.tabla} WHERE id = $1 RETURNING *`, [id]);
+    const tabla = req.tabla;
+    const id = parseInt(req.params.id);
+    const result = await pool.query(`DELETE FROM ${tabla} WHERE id = $1 RETURNING *`, [id]);
     if (result.rows.length === 0) return res.status(404).send('No encontrado');
-    res.json({ success: true, message: 'Eliminado correctamente' });
-  } catch {
+    res.send('Eliminado');
+  } catch (e) {
     res.status(500).send('Error al eliminar');
   }
 });
 
-// Crear reserva
-app.post('/reservar', async (req, res) => {
-  const { nombre, correo, celular, fecha_inicio, fecha_fin, num_habitacion, id_hotel } = req.body;
-  if (!nombre || !correo || !celular || !fecha_inicio || !fecha_fin || !num_habitacion || !id_hotel) {
-    return res.status(400).json({ success: false, message: 'Faltan datos' });
-  }
+// Reservar habitación (usuario autenticado)
+app.post('/reservar', autenticado, async (req, res) => {
   try {
+    const { hotel_id, fecha_inicio, fecha_fin, num_personas } = req.body;
+    if (!hotel_id || !fecha_inicio || !fecha_fin || !num_personas)
+      return res.status(400).send('Faltan datos');
+
+    // Verificar habitaciones disponibles
+    const hotelRes = await pool.query('SELECT habitaciones FROM hoteles WHERE id = $1', [hotel_id]);
+    if (hotelRes.rows.length === 0) return res.status(404).send('Hotel no encontrado');
+
+    // Aquí podrías agregar lógica para verificar reservas activas, etc.
+    // Por simplicidad asumo que solo descontamos una habitación
+
+    const habitaciones = hotelRes.rows[0].habitaciones;
+
+    if (habitaciones < 1) return res.status(400).send('No hay habitaciones disponibles');
+
+    // Insertar reserva
     await pool.query(
-      `INSERT INTO reserva (nombre_huesped, correo, celular, fecha_inicio, fecha_fin, num_habitacion, hotel_id)
-       VALUES ($1,$2,$3,$4,$5,$6,$7)`,
-      [nombre, correo, celular, fecha_inicio, fecha_fin, num_habitacion, id_hotel]
+      `INSERT INTO reservas (usuario_id, hotel_id, fecha_inicio, fecha_fin, num_personas)
+       VALUES ($1, $2, $3, $4, $5)`,
+      [req.usuario.id, hotel_id, fecha_inicio, fecha_fin, num_personas]
     );
 
-    // Emitir evento para que clientes actualicen habitaciones reservadas
-    io.emit('actualizar_reservas', { id_hotel, num_habitacion });
+    // Actualizar habitaciones disponibles
+    await pool.query('UPDATE hoteles SET habitaciones = habitaciones - 1 WHERE id = $1', [hotel_id]);
 
-    res.json({ success: true, message: 'Reserva creada' });
-  } catch (error) {
-    res.status(500).json({ success: false, message: 'Error al crear reserva' });
+    // Emitir evento socket para actualizar disponibilidad en clientes conectados
+    io.emit('actualizarHabitaciones', { hotel_id });
+
+    res.send('Reserva exitosa');
+  } catch (e) {
+    console.error(e);
+    res.status(500).send('Error al reservar');
   }
 });
 
-// Obtener todas las reservas
-app.get('/reservas', autenticado, async (req, res) => {
+// Obtener reservas del usuario autenticado
+app.get('/misReservas', autenticado, async (req, res) => {
   try {
-    const result = await pool.query('SELECT * FROM reserva ORDER BY id DESC');
+    const result = await pool.query(
+      `SELECT r.*, h.nombre as hotel_nombre
+       FROM reservas r
+       JOIN hoteles h ON r.hotel_id = h.id
+       WHERE r.usuario_id = $1`,
+      [req.usuario.id]
+    );
     res.json(result.rows);
-  } catch {
+  } catch (e) {
     res.status(500).send('Error al obtener reservas');
   }
 });
 
-// Obtener habitaciones reservadas por hotel
-app.get('/reservas/habitaciones/:id_hotel', async (req, res) => {
-  try {
-    const result = await pool.query(
-      `SELECT num_habitacion FROM reserva WHERE hotel_id = $1`,
-      [req.params.id_hotel]
-    );
-    res.json(result.rows.map(r => r.num_habitacion));
-  } catch (error) {
-    res.status(500).send('Error al obtener habitaciones reservadas');
-  }
+// Página 404 para rutas no encontradas
+app.use((req, res) => {
+  res.status(404).send('Ruta no encontrada');
 });
 
+// Iniciar servidor
 server.listen(PORT, () => {
   console.log(`Servidor iniciado en puerto ${PORT}`);
 });
