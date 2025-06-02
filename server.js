@@ -291,9 +291,12 @@ app.delete('/api/:tipo/:id', autenticado, esAdmin, validarTipoLugar, async (req,
 });
 
 // Reservas 
-app.post('/api/reservas', autenticado, async (req, res) => {
-  try {
-    console.log('Cuerpo recibido en /api/reservas:', req.body);
+app.post('/api/reservas', autenticado, (req, res) => {
+  const rol = req.user.rol;
+
+  if (rol !== 'usuario' && rol !== 'admin') {
+    return res.status(403).json({ error: "No tienes permiso para reservar" });
+  }
 
     const {
       nombre,
