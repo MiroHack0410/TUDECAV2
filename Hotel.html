@@ -220,7 +220,26 @@
     cargarLugares();
   });
 
-  window.onload = cargarLugares;
+  window.onload = async () => {
+    // Aquí haces fetch para obtener perfil con credenciales incluidas
+    try {
+      const perfilResponse = await fetch('https://tuapi.com/perfil', {
+        credentials: 'include'  // IMPORTANTE para enviar cookies o sesión
+      });
+      if (perfilResponse.ok) {
+        const perfilData = await perfilResponse.json();
+        console.log('Perfil usuario:', perfilData);
+        // Aquí podrías mostrar el nombre, ajustar la UI, etc.
+      } else {
+        console.log('No hay sesión activa o error al obtener perfil.');
+      }
+    } catch (error) {
+      console.error('Error en fetch perfil:', error);
+    }
+
+    // Carga hoteles después de verificar perfil
+    cargarLugares();
+  };
 </script>
 </body>
 </html>
