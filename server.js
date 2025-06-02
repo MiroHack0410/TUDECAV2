@@ -83,7 +83,7 @@ async function crearTablas() {
 
     // Tabla de reservas
     await pool.query(`
-      CREATE TABLE IF NOT EXISTS reservasv2 (
+      CREATE TABLE IF NOT EXISTS reservas (
         id SERIAL PRIMARY KEY,
         usuario_id INTEGER REFERENCES usuariosv2(id),
         hotel_id INTEGER REFERENCES hoteles(id),
