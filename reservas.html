@@ -278,15 +278,15 @@ const reservaData = {
   fecha_fin: fechaFin,
 };
 
-  try {
-    const res = await fetch('/api/reservas', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json'
-      },
-      credentials: 'include',
-      body: JSON.stringify(reservaData)
-    });
+await fetch('/api/reservas', {
+  method: 'POST',
+  headers: {
+    'Content-Type': 'application/json'
+  },
+  credentials: 'include', // ← Esto es crucial para que se envíe la cookie
+  body: JSON.stringify(data)
+});
+
 
     if (!res.ok) {
       const errorData = await res.json();
