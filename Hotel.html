@@ -159,51 +159,35 @@
 <script>
   const socket = io();
 
-  async function cargarLugares() {
-    try {
-      const res = await fetch('/api/hoteles');
-      const data = await res.json();
-      const contenedor = document.getElementById('lista-lugares');
-      contenedor.innerHTML = '';
+async function cargarLugares() {
+  try {
+    const res = await fetch('/api/hoteles');
+    const data = await res.json();
+    const contenedor = document.getElementById('lista-lugares');
+    contenedor.innerHTML = '';
 
-      data.forEach(item => {
-        const card = document.createElement('div');
-        card.className = 'card';
-        card.innerHTML = `
-          <img src="${item.imagen_url}" alt="${item.nombre}" onerror="this.src='/Imagenes/default.jpg'"/>
-          <h3>${item.nombre}</h3>
-          <div class="estrellas">${'★'.repeat(item.estrellas) + '☆'.repeat(5 - item.estrellas)}</div>
-          <p>${item.descripcion}</p>
-          <small>${item.direccion}</small>
-          <div class="mapa">${item.iframe_mapa}</div>
-        `;
-        contenedor.appendChild(card);
-      });
-
-      agregarEventosReserva();
-    } catch (e) {
-      alert('Error al cargar los hoteles.');
-      console.error(e);
-    }
-  }
-
-  function agregarEventosReserva() {
-    document.querySelectorAll('.btn-reservar').forEach(btn => {
-      btn.addEventListener('click', () => {
-        // Aquí solo redirige siempre a la página de reservas
-        window.location.href = 'reservas.html';
-      });
+    data.forEach(item => {
+      const card = document.createElement('div');
+      card.className = 'card';
+      card.innerHTML = `
+        <img src="${item.imagen_url}" alt="${item.nombre}" onerror="this.src='/Imagenes/default.jpg'"/>
+        <h3>${item.nombre}</h3>
+        <div class="estrellas">${'★'.repeat(item.estrellas) + '☆'.repeat(5 - item.estrellas)}</div>
+        <p>${item.descripcion}</p>
+        <small>${item.direccion}</small>
+        <div class="mapa">${item.iframe_mapa}</div>
+      `;
+      contenedor.appendChild(card);
     });
+
+  } catch (e) {
+    alert('Error al cargar los hoteles.');
+    console.error(e);
   }
-
-  socket.on('actualizar_reservas', () => {
-    console.log("Actualización de reservas recibida");
-    cargarLugares();
-  });
-
-  window.onload = () => {
-    cargarLugares();
-  };
+}
+window.onload = () => {
+  cargarLugares();
+};
 </script>
 </body>
 </html>
