@@ -289,29 +289,29 @@ app.post('/reservar', autenticado, async (req, res) => {
 
     // Validación básica de datos
     if (!hotel_id || !fecha_inicio || !fecha_fin || !num_personas) {
-      return res.status(400).send('Faltan datos');
+      return res.status(400).json({ error: 'Faltan datos' });
     }
 
     // Validar que usuario esté autenticado
     const usuario_id = req.usuario?.id;
-    if (!usuario_id) return res.status(401).send('Usuario no autenticado');
+    if (!usuario_id) return res.status(401).json({ error: 'Usuario no autenticado' });
 
     // Verificar que el hotel exista y obtener habitaciones disponibles
     const hotelRes = await pool.query('SELECT habitaciones FROM hoteles WHERE id = $1', [hotel_id]);
-    if (hotelRes.rows.length === 0) return res.status(404).send('Hotel no encontrado');
+    if (hotelRes.rows.length === 0) return res.status(404).json({ error: 'Hotel no encontrado' });
 
     const habitaciones = parseInt(hotelRes.rows[0].habitaciones);
     if (isNaN(habitaciones) || habitaciones < 1)
-      return res.status(400).send('No hay habitaciones disponibles');
+      return res.status(400).json({ error: 'No hay habitaciones disponibles' });
 
-    // Validar fechas (que la fecha de inicio sea menor a la de fin)
+    // Validar fechas
     const inicio = new Date(fecha_inicio);
     const fin = new Date(fecha_fin);
     if (isNaN(inicio.getTime()) || isNaN(fin.getTime()) || inicio >= fin) {
-      return res.status(400).send('Fechas inválidas');
+      return res.status(400).json({ error: 'Fechas inválidas' });
     }
 
-    // Verificar si el usuario ya tiene una reserva para ese hotel en el mismo rango de fechas
+    // Verificar si el usuario ya tiene una reserva para ese hotel en ese rango
     const reservaExistente = await pool.query(
       `SELECT * FROM reservas
        WHERE usuario_id = $1 AND hotel_id = $2
@@ -322,7 +322,7 @@ app.post('/reservar', autenticado, async (req, res) => {
       [usuario_id, hotel_id, fecha_inicio, fecha_fin]
     );
     if (reservaExistente.rows.length > 0) {
-      return res.status(400).send('Ya tienes una reserva en ese hotel para esas fechas');
+      return res.status(400).json({ error: 'Ya tienes una reserva en ese hotel para esas fechas' });
     }
 
     // Insertar nueva reserva
@@ -335,13 +335,13 @@ app.post('/reservar', autenticado, async (req, res) => {
     // Descontar una habitación disponible
     await pool.query('UPDATE hoteles SET habitaciones = habitaciones - 1 WHERE id = $1', [hotel_id]);
 
-    // Emitir evento vía Socket.IO para actualizar habitaciones en tiempo real
+    // Emitir evento en tiempo real para actualizar disponibilidad
     io.emit('actualizarHabitaciones', { hotel_id });
 
-    res.send('Reserva exitosa');
+    res.json({ mensaje: 'Reserva exitosa' }); // ✅ respuesta en JSON
   } catch (e) {
     console.error('Error al reservar:', e.message, e.stack);
-    res.status(500).send('Error al reservar');
+    res.status(500).json({ error: 'Error al reservar' });
   }
 });
 
