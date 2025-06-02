@@ -290,12 +290,27 @@ app.delete('/api/:tipo/:id', autenticado, esAdmin, validarTipoLugar, async (req,
   }
 });
 
+// Reservas 
 app.post('/api/reservas', autenticado, async (req, res) => {
   try {
     console.log('Cuerpo recibido en /api/reservas:', req.body);
-    const { nombre_huesped, correo, celular, hotel_id, num_habitacion, fecha_inicio, fecha_fin } = req.body;
-    
-    if (!nombre_huesped || !correo || !celular || !hotel_id || !num_habitacion || !fecha_inicio || !fecha_fin) {
+
+    const {
+      nombre,
+      correo,
+      celular,
+      id_hotel,
+      num_habitacion,
+      fecha_inicio,
+      fecha_fin
+    } = req.body;
+
+    // Validación básica de campos obligatorios
+    if (
+      !nombre || !correo || !celular ||
+      !id_hotel || !num_habitacion ||
+      !fecha_inicio || !fecha_fin
+    ) {
       return res.status(400).json({ error: 'Faltan datos obligatorios' });
     }
 
@@ -311,34 +326,32 @@ app.post('/api/reservas', autenticado, async (req, res) => {
       return res.status(400).json({ error: 'Fecha de fin debe ser mayor que fecha de inicio' });
     }
 
-    // Verificar si hay reservas conflictivas para la misma habitación y hotel
+    // Verificar conflicto con reservas existentes
     const reservaConflicto = await pool.query(
       `SELECT * FROM reserva
        WHERE hotel_id = $1
          AND num_habitacion = $2
          AND fecha_fin > $3
          AND fecha_inicio < $4`,
-      [hotel_id, num_habitacion, inicio, fin]
+      [id_hotel, num_habitacion, inicio, fin]
     );
 
     if (reservaConflicto.rowCount > 0) {
       return res.status(409).json({ error: 'Habitación ya reservada en esas fechas' });
     }
 
-    // Insertar reserva
+    // Insertar la nueva reserva
     await pool.query(
       `INSERT INTO reserva (nombre_huesped, correo, celular, hotel_id, num_habitacion, fecha_inicio, fecha_fin)
        VALUES ($1, $2, $3, $4, $5, $6, $7)`,
-      [nombre_huesped, correo, celular, hotel_id, num_habitacion, inicio, fin]
+      [nombre, correo, celular, id_hotel, num_habitacion, inicio, fin]
     );
 
-    // Actualizar habitaciones disponibles (opcional, según lógica de negocio)
-    await pool.query(
-      `UPDATE hoteles SET habitaciones = GREATEST(habitaciones - 1, 0) WHERE id = $1`,
-      [hotel_id]
-    );
-
-    io.emit('actualizarHabitaciones', { hotel_id });
+    // Emitir evento para actualizar UI en frontend
+    io.emit('actualizar_reservas', {
+      id_hotel,
+      num_habitacion
+    });
 
     res.json({ mensaje: 'Reserva realizada con éxito' });
   } catch (e) {
