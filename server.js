@@ -250,6 +250,17 @@ app.get('/reservas/habitaciones/:id_hotel', async (req, res) => {
   }
 });
 
+app.get('/api/reservas', async (req, res) => {
+  try {
+    const result = await pool.query('SELECT * FROM reservas');
+    res.json(result.rows);
+  } catch (error) {
+    console.error('Error al obtener reservas:', error);
+    res.status(500).send('Error al obtener reservas');
+  }
+});
+
+
 // Servidor en escucha
 app.listen(PORT, () => {
   console.log(`Servidor iniciado en puerto ${PORT}`);
