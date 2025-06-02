@@ -281,7 +281,3 @@ app.get('/reservas/habitaciones/:id_hotel', async (req, res) => {
 server.listen(PORT, () => {
   console.log(`Servidor iniciado en puerto ${PORT}`);
 });
-
-app.listen(PORT, () => {
-  console.log(`Servidor iniciado en puerto ${PORT}`);
-});
