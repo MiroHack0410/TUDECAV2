@@ -305,7 +305,7 @@ app.post('/api/reservas', autenticado, async (req, res) => {
       fecha_fin
     } = req.body;
 
-        // Validar que fecha_inicio sea válida
+    // Validar que fecha_inicio sea válida
     const inicio = new Date(fecha_inicio);
     if (isNaN(inicio)) {
       return res.status(400).json({ error: 'Fecha inicio inválida' });
@@ -326,8 +326,6 @@ app.post('/api/reservas', autenticado, async (req, res) => {
       return res.status(400).json({ error: 'Faltan datos obligatorios' });
     }
 
-    const inicio = new Date(fecha_inicio);
-    const fin = new Date(fecha_fin);
     const hoy = new Date();
     hoy.setHours(0, 0, 0, 0);
 
@@ -371,6 +369,7 @@ app.post('/api/reservas', autenticado, async (req, res) => {
     res.status(500).json({ error: 'Error al realizar la reserva' });
   }
 });
+
 
 server.listen(PORT, () => {
   console.log(`Servidor escuchando en http://localhost:${PORT}`);
