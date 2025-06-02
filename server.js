@@ -247,6 +247,27 @@ app.get('/reservas/habitaciones/:id_hotel', async (req, res) => {
   }
 });
 
+app.delete('/cancelar_reserva', async (req, res) => {
+  const { num_habitacion, hotel_id } = req.body;
+  if (!num_habitacion || !hotel_id) {
+    return res.status(400).json({ success: false, message: 'Faltan datos' });
+  }
+  try {
+    const result = await pool.query(
+      'DELETE FROM reserva WHERE num_habitacion = $1 AND hotel_id = $2 RETURNING *',
+      [num_habitacion, hotel_id]
+    );
+    if (result.rowCount === 0) {
+      return res.status(404).json({ success: false, message: 'Reserva no encontrada' });
+    }
+    res.json({ success: true, message: 'Reserva cancelada' });
+  } catch (error) {
+    console.error('Error al cancelar reserva:', error.message);
+    res.status(500).json({ success: false, message: 'Error al cancelar reserva' });
+  }
+});
+
+
 // Servidor en escucha
 app.listen(PORT, () => {
   console.log(`Servidor iniciado en puerto ${PORT}`);
