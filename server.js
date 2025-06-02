@@ -290,8 +290,7 @@ app.delete('/api/:tipo/:id', autenticado, esAdmin, validarTipoLugar, async (req,
   }
 });
 
-// Reservas 
-app.post('/api/reservas', autenticado, async (req, res) => {
+app.post('/api/reservas', async (req, res) => {
   try {
     const {
       nombre,
@@ -316,6 +315,10 @@ app.post('/api/reservas', autenticado, async (req, res) => {
       [id_hotel, num_habitacion, inicio, fin]
     );
 
+    if (reservaConflicto.rows.length > 0) {
+      return res.status(400).json({ error: 'Ya existe una reserva en ese rango de fechas' });
+    }
+
     // Insertar la nueva reserva
     await pool.query(
       `INSERT INTO reserva (nombre_huesped, correo, celular, hotel_id, num_habitacion, fecha_inicio, fecha_fin)
@@ -323,13 +326,14 @@ app.post('/api/reservas', autenticado, async (req, res) => {
       [nombre, correo, celular, id_hotel, num_habitacion, inicio, fin]
     );
 
-    // Emitir evento para actualizar UI en frontend
+    // Emitir evento al frontend
     io.emit('actualizar_reservas', {
       id_hotel,
       num_habitacion
     });
 
     res.json({ mensaje: 'Reserva realizada con éxito' });
+
   } catch (e) {
     console.error('Error al procesar reserva:', e);
     res.status(500).json({ error: 'Error al realizar la reserva' });
