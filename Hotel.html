@@ -154,36 +154,7 @@
   <main>
     <div id="lista-lugares"></div>
   </main>
-
-<script src="/socket.io/socket.io.js"></script>
 <script>
-  // Establecer conexión con el servidor de WebSocket
-  const socket = io();
-
-  // Función para verificar si el usuario ha iniciado sesión
-  function estaLogueado() {
-    // Supongamos que usas una cookie llamada 'token' para el JWT
-    return document.cookie.split(';').some(c => c.trim().startsWith('token='));
-  }
-
-  // Esta función añade el evento "click" a todos los botones "Reservar"
-  function agregarEventosReserva() {
-    document.querySelectorAll('.btn-reservar').forEach(btn => {
-      btn.addEventListener('click', () => {
-        const hotelId = btn.getAttribute('data-id');
-        localStorage.setItem('hotelSeleccionado', hotelId);
-
-        // Redirección dependiendo si el usuario está logueado
-        if (estaLogueado()) {
-          window.location.href = 'reservas.html';
-        } else {
-          alert("Debe iniciar sesión para reservar.");
-          window.location.href = 'inicio_sesion.html';
-        }
-      });
-    });
-  }
-
   // Esta función carga todos los hoteles desde el backend y los muestra como tarjetas
   async function cargarLugares() {
     try {
@@ -202,7 +173,6 @@
           <p>${item.descripcion}</p>
           <small>${item.direccion}</small>
           <div class="mapa">${item.iframe_mapa}</div>
-          <button class="btn-reservar" data-id="${item.id}">Reservar</button>
         `;
         contenedor.appendChild(card);
       });
@@ -222,21 +192,6 @@
 
   window.onload = async () => {
     // Aquí haces fetch para obtener perfil con credenciales incluidas
-    try {
-      const perfilResponse = await fetch('https://tuapi.com/perfil', {
-        credentials: 'include'  // IMPORTANTE para enviar cookies o sesión
-      });
-      if (perfilResponse.ok) {
-        const perfilData = await perfilResponse.json();
-        console.log('Perfil usuario:', perfilData);
-        // Aquí podrías mostrar el nombre, ajustar la UI, etc.
-      } else {
-        console.log('No hay sesión activa o error al obtener perfil.');
-      }
-    } catch (error) {
-      console.error('Error en fetch perfil:', error);
-    }
-
     // Carga hoteles después de verificar perfil
     cargarLugares();
   };
