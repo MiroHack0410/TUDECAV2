@@ -170,16 +170,33 @@
     </div>
   </div>
 
-  <script>
+<script>
 async function cargarHoteles() {
   try {
-    const res = await fetch('/api/hoteles');
+    const res = await fetch('/api/hoteles', {
+      credentials: 'include' // 🔑 Esto permite enviar cookies (como el token JWT)
+    });
+
+    if (!res.ok) {
+      throw new Error(`Error HTTP: ${res.status}`);
+    }
+
     const hoteles = await res.json();
+    console.log('✅ Hoteles recibidos:', hoteles); // 🔎 Verifica lo que llegó
+
     const contenedor = document.getElementById('lista-hoteles');
     contenedor.innerHTML = '';
 
+    if (!Array.isArray(hoteles) || hoteles.length === 0) {
+      contenedor.innerHTML = '<p>No hay hoteles disponibles.</p>';
+      return;
+    }
+
     hoteles.forEach(hotel => {
-      const habitaciones = Array.from({ length: Number(hotel.num_habitaciones) || 1 }, (_, i) => i + 1);
+      const habitaciones = Array.from(
+        { length: Number(hotel.num_habitaciones) || 1 },
+        (_, i) => i + 1
+      );
       const ocupadas = hotel.habitaciones_ocupadas || [];
 
       const div = document.createElement('div');
@@ -210,65 +227,13 @@ async function cargarHoteles() {
       contenedor.appendChild(div);
     });
   } catch (error) {
-    console.error('Error al cargar hoteles:', error);
-    document.getElementById('lista-hoteles').innerHTML = '<p>Error al cargar hoteles.</p>';
+    console.error('❌ Error al cargar hoteles:', error);
+    const contenedor = document.getElementById('lista-hoteles');
+    contenedor.innerHTML = `<p style="color:red;">Error al cargar hoteles: ${error.message}</p>`;
   }
 }
+</script>
 
-function abrirModal(hotelId, habitacionNum) {
-  document.getElementById('hotelId').value = hotelId;
-  document.getElementById('habitacionNum').value = habitacionNum;
-  document.getElementById('modalReserva').style.display = 'block';
-}
-
-function cerrarModal() {
-  document.getElementById('modalReserva').style.display = 'none';
-  document.getElementById('formReserva').reset();
-}
-
-async function enviarReserva(event) {
-  event.preventDefault();
-  const datos = {
-    id_hotel: document.getElementById('hotelId').value,
-    num_habitacion: document.getElementById('habitacionNum').value,
-    nombre: document.getElementById('nombre').value.trim(),
-    correo: document.getElementById('correo').value.trim(),
-    celular: document.getElementById('celular').value.trim(),
-    fecha_inicio: document.getElementById('fecha_inicio').value,
-    fecha_fin: document.getElementById('fecha_fin').value
-  };
-
-const res = await fetch('/api/reservas', {
-  method: 'POST',
-  headers: { 'Content-Type': 'application/json' },
-  credentials: 'include', // MUY IMPORTANTE para enviar la cookie del JWT
-  body: JSON.stringify(datos)
-});
-
-    const result = await res.json();
-    if (result.success) {
-      alert('Reserva realizada con éxito');
-      cerrarModal();
-
-      // Cambiar botón a rojo y desactivar
-      const boton = document.querySelector(
-        `.boton-habitacion[data-hotel="${datos.id_hotel}"][data-num="${datos.num_habitacion}"]`
-      );
-      if (boton) {
-        boton.classList.add('boton-ocupado');
-        boton.disabled = true;
-      }
-    } else {
-      alert('Error: ' + (result.message || 'No se pudo completar la reserva'));
-    }
-  } catch (error) {
-    alert('Error al reservar');
-    console.error(error);
-  }
-}
-
-cargarHoteles();
-  </script>
 <script src="https://cdn.socket.io/4.6.1/socket.io.min.js"></script>
 <script>
   const socket = io();
