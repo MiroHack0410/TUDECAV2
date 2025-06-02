@@ -282,43 +282,69 @@ app.delete('/api/:tipo/:id', autenticado, esAdmin, validarTipoLugar, async (req,
   }
 });
 
-// Reservar habitación (usuario autenticado)
+// Endpoint para reservar una habitación (requiere autenticación)
 app.post('/reservar', autenticado, async (req, res) => {
   try {
     const { hotel_id, fecha_inicio, fecha_fin, num_personas } = req.body;
-    if (!hotel_id || !fecha_inicio || !fecha_fin || !num_personas)
-      return res.status(400).send('Faltan datos');
 
-    // Verificar habitaciones disponibles
+    // Validación básica de datos
+    if (!hotel_id || !fecha_inicio || !fecha_fin || !num_personas) {
+      return res.status(400).send('Faltan datos');
+    }
+
+    // Validar que usuario esté autenticado
+    const usuario_id = req.usuario?.id;
+    if (!usuario_id) return res.status(401).send('Usuario no autenticado');
+
+    // Verificar que el hotel exista y obtener habitaciones disponibles
     const hotelRes = await pool.query('SELECT habitaciones FROM hoteles WHERE id = $1', [hotel_id]);
     if (hotelRes.rows.length === 0) return res.status(404).send('Hotel no encontrado');
 
-    // Aquí podrías agregar lógica para verificar reservas activas, etc.
-    // Por simplicidad asumo que solo descontamos una habitación
+    const habitaciones = parseInt(hotelRes.rows[0].habitaciones);
+    if (isNaN(habitaciones) || habitaciones < 1)
+      return res.status(400).send('No hay habitaciones disponibles');
 
-    const habitaciones = hotelRes.rows[0].habitaciones;
+    // Validar fechas (que la fecha de inicio sea menor a la de fin)
+    const inicio = new Date(fecha_inicio);
+    const fin = new Date(fecha_fin);
+    if (isNaN(inicio.getTime()) || isNaN(fin.getTime()) || inicio >= fin) {
+      return res.status(400).send('Fechas inválidas');
+    }
 
-    if (habitaciones < 1) return res.status(400).send('No hay habitaciones disponibles');
+    // Verificar si el usuario ya tiene una reserva para ese hotel en el mismo rango de fechas
+    const reservaExistente = await pool.query(
+      `SELECT * FROM reservas
+       WHERE usuario_id = $1 AND hotel_id = $2
+       AND (
+         (fecha_inicio <= $3 AND fecha_fin >= $3) OR
+         (fecha_inicio <= $4 AND fecha_fin >= $4)
+       )`,
+      [usuario_id, hotel_id, fecha_inicio, fecha_fin]
+    );
+    if (reservaExistente.rows.length > 0) {
+      return res.status(400).send('Ya tienes una reserva en ese hotel para esas fechas');
+    }
 
-    // Insertar reserva
+    // Insertar nueva reserva
     await pool.query(
       `INSERT INTO reservas (usuario_id, hotel_id, fecha_inicio, fecha_fin, num_personas)
        VALUES ($1, $2, $3, $4, $5)`,
-      [req.usuario.id, hotel_id, fecha_inicio, fecha_fin, num_personas]
+      [usuario_id, hotel_id, fecha_inicio, fecha_fin, num_personas]
     );
 
-    // Actualizar habitaciones disponibles
+    // Descontar una habitación disponible
     await pool.query('UPDATE hoteles SET habitaciones = habitaciones - 1 WHERE id = $1', [hotel_id]);
 
-    // Emitir evento socket para actualizar disponibilidad en clientes conectados
+    // Emitir evento vía Socket.IO para actualizar habitaciones en tiempo real
     io.emit('actualizarHabitaciones', { hotel_id });
 
     res.send('Reserva exitosa');
   } catch (e) {
-    console.error(e);
+    console.error('Error al reservar:', e.message, e.stack);
     res.status(500).send('Error al reservar');
   }
 });
+
 
 // Obtener reservas del usuario autenticado
 app.get('/misReservas', autenticado, async (req, res) => {
