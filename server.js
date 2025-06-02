@@ -50,6 +50,61 @@ io.on('connection', (socket) => {
   });
 });
 
+// Crear tablas si no existen
+async function crearTablas() {
+  try {
+    // Tabla de hoteles
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS hoteles (
+        id SERIAL PRIMARY KEY,
+        nombre TEXT NOT NULL,
+        descripcion TEXT,
+        direccion TEXT,
+        estrellas INTEGER,
+        imagen_url TEXT,
+        iframe_mapa TEXT,
+        num_habitaciones INTEGER NOT NULL
+      );
+    `);
+
+    // Tabla de usuarios
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS usuariosv2 (
+        id SERIAL PRIMARY KEY,
+        nombre TEXT NOT NULL,
+        apellido TEXT NOT NULL,
+        telefono TEXT,
+        correo TEXT UNIQUE NOT NULL,
+        sexo TEXT NOT NULL,
+        password TEXT NOT NULL,
+        rol INTEGER DEFAULT 2
+      );
+    `);
+
+    // Tabla de reservas
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS reservasv2 (
+        id SERIAL PRIMARY KEY,
+        usuario_id INTEGER REFERENCES usuariosv2(id),
+        hotel_id INTEGER REFERENCES hoteles(id),
+        num_habitacion INTEGER NOT NULL,
+        nombre TEXT NOT NULL,
+        correo TEXT NOT NULL,
+        celular TEXT NOT NULL,
+        fecha_inicio DATE NOT NULL,
+        fecha_fin DATE NOT NULL
+      );
+    `);
+
+    console.log('✔ Tablas creadas correctamente (si no existían)');
+  } catch (err) {
+    console.error('❌ Error al crear tablas:', err);
+  }
+}
+
+crearTablas(); // Ejecutar la función al iniciar
+
+
 // Middleware para validar JWT en cookie
 function autenticado(req, res, next) {
   const token = req.cookies.token;
