@@ -155,8 +155,10 @@
   <main>
     <div id="lista-lugares"></div>
   </main>
+<script src="/socket.io/socket.io.js"></script>
 <script>
-  // Esta función carga todos los hoteles desde el backend y los muestra como tarjetas
+  const socket = io();
+
   async function cargarLugares() {
     try {
       const res = await fetch('/api/hoteles');
@@ -185,15 +187,13 @@
     }
   }
 
-  // WebSocket: Escucha cuando hay una actualización de hoteles
-  socket.on('actualizar_hoteles', () => {
-    console.log("Actualización de hoteles recibida por WebSocket");
+
+  socket.on('actualizar_reservas', () => {
+    console.log("Actualización de reservas recibida");
     cargarLugares();
   });
 
-  window.onload = async () => {
-    // Aquí haces fetch para obtener perfil con credenciales incluidas
-    // Carga hoteles después de verificar perfil
+  window.onload = () => {
     cargarLugares();
   };
 </script>
