@@ -65,47 +65,65 @@
       margin: 0;
       background-color: #f0f0f0;
     }
-    #lista-lugares {
+      .cards {
+      margin: 2rem auto;
+      padding: 0 1rem;
       display: flex;
       flex-wrap: wrap;
-      justify-content: center;
-      gap: 20px;
-      padding: 20px;
+      gap: 15px;
+      max-width: 1200px;
     }
+
     .card {
-      background: white;
-      width: 280px;
+      background: #f9f9f9;
       border-radius: 8px;
-      box-shadow: 0 2px 8px rgba(0,0,0,0.15);
-      overflow: hidden;
+      box-shadow: 0 0 5px #bbb;
+      padding: 15px;
+      width: calc(20% - 15px); /* 5 columnas */
+      box-sizing: border-box;
       display: flex;
       flex-direction: column;
+      justify-content: space-between;
     }
+
     .card img {
       width: 100%;
-      height: 160px;
+      height: 150px;
       object-fit: cover;
+      border-radius: 6px;
     }
+
     .card h3 {
-      margin: 10px;
-      font-size: 20px;
-      color: #2c3e50;
+      margin: 10px 0 5px;
     }
-    .estrellas {
-      margin: 0 10px;
-      color: #e67e22;
-    }
+
     .card p {
-      margin: 10px;
       font-size: 14px;
-      color: #555;
+      margin: 5px 0;
       flex-grow: 1;
     }
+
     .card small {
-      margin: 10px;
-      color: #777;
       font-size: 12px;
+      color: #555;
     }
+
+    .card button {
+      background-color: #c34444;
+      margin-top: 10px;
+    }
+
+    .card button:hover {
+      background-color: #9b3333;
+    }
+
+    .estrellas {
+      font-size: 18px;
+      color: gold;
+      margin: 5px 0;
+      display: inline-block;
+    }
+
     .mapa iframe {
       width: 100%;
       height: 180px;
@@ -113,6 +131,17 @@
       border-radius: 6px;
       margin-top: 10px;
     }
+
+    @media (max-width: 1000px) {
+      .card {
+        width: calc(33.333% - 15px);
+      }
+    }
+
+    @media (max-width: 700px) {
+      .card {
+        width: 100%;
+      }
   </style>
 </head>
 <body>
