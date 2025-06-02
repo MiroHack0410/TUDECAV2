@@ -305,6 +305,18 @@ app.post('/api/reservas', autenticado, async (req, res) => {
       fecha_fin
     } = req.body;
 
+        // Validar que fecha_inicio sea válida
+    const inicio = new Date(fecha_inicio);
+    if (isNaN(inicio)) {
+      return res.status(400).json({ error: 'Fecha inicio inválida' });
+    }
+
+    // Validar que fecha_fin sea válida
+    const fin = new Date(fecha_fin);
+    if (isNaN(fin)) {
+      return res.status(400).json({ error: 'Fecha fin inválida' });
+    }
+
     // Validación básica de campos obligatorios
     if (
       !nombre || !correo || !celular ||
