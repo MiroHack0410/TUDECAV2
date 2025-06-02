@@ -277,6 +277,13 @@ app.get('/reservas/habitaciones/:id_hotel', async (req, res) => {
   }
 });
 
+res.cookie('token', token, {
+  httpOnly: false, // <- importante
+  sameSite: 'Lax',
+  secure: false
+});
+
+
 server.listen(PORT, () => {
   console.log(`Servidor iniciado en puerto ${PORT}`);
 });
