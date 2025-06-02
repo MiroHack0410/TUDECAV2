@@ -155,10 +155,7 @@
   <main>
     <div id="lista-lugares"></div>
   </main>
-<script src="/socket.io/socket.io.js"></script>
 <script>
-  const socket = io();
-
 async function cargarLugares() {
   try {
     const res = await fetch('/api/hoteles');
