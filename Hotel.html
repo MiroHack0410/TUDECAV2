@@ -99,92 +99,70 @@
   </style>
 </head>
 <body>
-  <div class="navbar">
-    <a href="Hotel.html" class="signup-btn-link">Volver</a>
-    <div class="title">Hoteles disponibles para reservar</div>
-    <div></div>
-  </div>
+  <header>
+    <div class="navbar">
+      <div class="dropdown">
+        <button class="dropbtn">Menú ▼</button>
+        <div class="dropdown-content">
+          <a href="Hotel.html">Hoteles</a>
+          <a href="restaurantes.html">Restaurantes</a>
+          <a href="puntos_interes.html">Atracciones</a>
+        </div>
+      </div>
+      <div href="index.html" class="title">TUDECA</div>
+      <div><a href="index.html" class="signup-btn-link">Inicio</a></div>
+    </div>
+  </header>
 
-  <div id="lista-hoteles"></div>
+  <main>
+    <div id="lista-lugares"></div>
+  </main>
 
   <script>
-    async function cargarHoteles() {
-      try {
-        const res = await fetch('/api/hoteles');
-        if (!res.ok) throw new Error('Error al obtener hoteles');
-        const hoteles = await res.json();
-        const contenedor = document.getElementById('lista-hoteles');
-        contenedor.innerHTML = '';
+// Después de cargar las tarjetas
+function agregarEventosReserva() {
+  document.querySelectorAll('.btn-reservar').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const hotelId = btn.getAttribute('data-id');
+      const usuarioLogeado = localStorage.getItem('usuario'); // o como manejes sesión
 
-        hoteles.forEach(hotel => {
-          const div = document.createElement('div');
-          div.className = 'hotel';
-          div.innerHTML = 
-            <h2>${hotel.nombre}</h2>
-            ${hotel.imagen_url ? <img src="${hotel.imagen_url}" alt="${hotel.nombre}"> : ''}
-            <p><strong>Estrellas:</strong> ${hotel.estrellas || 'No especificado'}</p>
-            <p><strong>Descripción:</strong> ${hotel.descripcion || 'No disponible'}</p>
-            <p><strong>Dirección:</strong> ${hotel.direccion || 'No disponible'}</p>
-            ${hotel.iframe_mapa ? <iframe class="mapa-iframe" src="${hotel.iframe_mapa}" loading="lazy"></iframe> : ''}
-            <form class="formulario-reserva" onsubmit="return enviarReserva(event, ${hotel.id})">
-              <h3>Reservar este hotel</h3>
-              <label>Nombre completo</label>
-              <input type="text" name="nombre" required />
-              <label>Correo electrónico</label>
-              <input type="email" name="correo" required />
-              <label>Celular</label>
-              <input type="tel" name="celular" required />
-              <label>Fecha inicio</label>
-              <input type="date" name="fecha_inicio" required />
-              <label>Fecha fin</label>
-              <input type="date" name="fecha_fin" required />
-              <label>Número de habitación</label>
-              <input type="number" name="num_habitacion" min="1" required />
-              <button type="submit">Reservar</button>
-            </form>
-          ;
-          contenedor.appendChild(div);
-        });
-      } catch (error) {
-        console.error('Error al cargar hoteles:', error);
-        document.getElementById('lista-hoteles').innerHTML = '<p>Error al cargar hoteles.</p>';
+      if (!usuarioLogeado) {
+        window.location.href = 'inicio_sesion.html';
+      } else {
+        localStorage.setItem('hotelSeleccionado', hotelId);
+        window.location.href = 'reservas.html';
       }
-    }
+    });
+  });
+}
 
-    async function enviarReserva(event, hotelId) {
-      event.preventDefault();
-      const form = event.target;
-      const datos = {
-        nombre: form.nombre.value.trim(),
-        correo: form.correo.value.trim(),
-        celular: form.celular.value.trim(),
-        fecha_inicio: form.fecha_inicio.value,
-        fecha_fin: form.fecha_fin.value,
-        num_habitacion: form.num_habitacion.value,
-        id_hotel: hotelId
-      };
+async function cargarLugares() {
+  try {
+    const res = await fetch('/api/hoteles');
+    const data = await res.json();
+    const contenedor = document.getElementById('lista-lugares');
+    contenedor.innerHTML = '';
+    data.forEach(item => {
+      const card = document.createElement('div');
+      card.className = 'card';
+      card.innerHTML = `
+        <img src="${item.imagen_url}" alt="${item.nombre}" onerror="this.src='/Imagenes/default.jpg'"/>
+        <h3>${item.nombre}</h3>
+        <div class="estrellas">${'★'.repeat(item.estrellas) + '☆'.repeat(5 - item.estrellas)}</div>
+        <p>${item.descripcion}</p>
+        <small>${item.direccion}</small>
+        <div class="mapa">${item.iframe_mapa}</div>
+      `;
+      contenedor.appendChild(card);
+    });
+    agregarEventosReserva();  // <--- Aquí llamas para agregar eventos a los botones
+  } catch(e) {
+    alert('Error al cargar los hoteles.');
+    console.error(e);
+  }
+}
 
-      try {
-        const res = await fetch('/reservar', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(datos)
-        });
-
-        const result = await res.json();
-        if (result.success) {
-          alert('Reserva realizada con éxito');
-          form.reset();
-        } else {
-          alert('Error: ' + (result.message || 'No se pudo completar la reserva'));
-        }
-      } catch (error) {
-        alert('Error al reservar');
-        console.error(error);
-      }
-    }
-
-    cargarHoteles();
+cargarLugares();
   </script>
 </body>
 </html>
