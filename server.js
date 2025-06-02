@@ -277,7 +277,6 @@ app.get('/reservas/habitaciones/:id_hotel', async (req, res) => {
   }
 });
 
-// Iniciar servidor con socket.io
 server.listen(PORT, () => {
   console.log(`Servidor iniciado en puerto ${PORT}`);
 });
