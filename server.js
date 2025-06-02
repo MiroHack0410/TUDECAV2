@@ -291,13 +291,7 @@ app.delete('/api/:tipo/:id', autenticado, esAdmin, validarTipoLugar, async (req,
 });
 
 // Reservas 
-app.post('/api/reservas', autenticado, (req, res) => {
-  const rol = req.user.rol;
-
-  if (rol !== 'usuario' && rol !== 'admin') {
-    return res.status(403).json({ error: "No tienes permiso para reservar" });
-  }
-
+app.post('/api/reservas', autenticado, async (req, res) => {
     const {
       nombre,
       correo,
@@ -308,36 +302,8 @@ app.post('/api/reservas', autenticado, (req, res) => {
       fecha_fin
     } = req.body;
 
-    // Validar que fecha_inicio sea válida
     const inicio = new Date(fecha_inicio);
-    if (isNaN(inicio)) {
-      return res.status(400).json({ error: 'Fecha inicio inválida' });
-    }
-
-    // Validar que fecha_fin sea válida
     const fin = new Date(fecha_fin);
-    if (isNaN(fin)) {
-      return res.status(400).json({ error: 'Fecha fin inválida' });
-    }
-
-    // Validación básica de campos obligatorios
-    if (
-      !nombre || !correo || !celular ||
-      !id_hotel || !num_habitacion ||
-      !fecha_inicio || !fecha_fin
-    ) {
-      return res.status(400).json({ error: 'Faltan datos obligatorios' });
-    }
-
-    const hoy = new Date();
-    hoy.setHours(0, 0, 0, 0);
-
-    if (inicio < hoy) {
-      return res.status(400).json({ error: 'Fecha de inicio debe ser hoy o posterior' });
-    }
-    if (fin <= inicio) {
-      return res.status(400).json({ error: 'Fecha de fin debe ser mayor que fecha de inicio' });
-    }
 
     // Verificar conflicto con reservas existentes
     const reservaConflicto = await pool.query(
@@ -348,10 +314,6 @@ app.post('/api/reservas', autenticado, (req, res) => {
          AND fecha_inicio < $4`,
       [id_hotel, num_habitacion, inicio, fin]
     );
-
-    if (reservaConflicto.rowCount > 0) {
-      return res.status(409).json({ error: 'Habitación ya reservada en esas fechas' });
-    }
 
     // Insertar la nueva reserva
     await pool.query(
