@@ -170,7 +170,7 @@
     </div>
   </div>
 
-<script>
+  <script>
 async function cargarHoteles() {
   try {
     const res = await fetch('/api/hoteles');
@@ -178,13 +178,9 @@ async function cargarHoteles() {
     const contenedor = document.getElementById('lista-hoteles');
     contenedor.innerHTML = '';
 
-    for (const hotel of hoteles) {
+    hoteles.forEach(hotel => {
       const habitaciones = Array.from({ length: Number(hotel.num_habitaciones) || 1 }, (_, i) => i + 1);
-
-      // Consultar habitaciones reservadas desde el servidor
-      const ocupadasResp = await fetch(`/habitaciones_reservadas/${hotel.id}`);
-      const ocupadasData = await ocupadasResp.json();
-      const ocupadas = ocupadasData.success ? ocupadasData.reservadas : [];
+      const ocupadas = hotel.habitaciones_ocupadas || [];
 
       const div = document.createElement('div');
       div.className = 'hotel';
@@ -201,7 +197,8 @@ async function cargarHoteles() {
             ${habitaciones.map(num => `
               <button
                 class="boton-habitacion ${ocupadas.includes(num) ? 'boton-ocupado' : ''}"
-                onclick="manejarClick(this)"
+                onclick="abrirModal(${hotel.id}, ${num})"
+                ${ocupadas.includes(num) ? 'disabled' : ''}
                 data-hotel="${hotel.id}" data-num="${num}"
               >
                 Habitación ${num}
@@ -211,7 +208,7 @@ async function cargarHoteles() {
         </div>
       `;
       contenedor.appendChild(div);
-    }
+    });
   } catch (error) {
     console.error('Error al cargar hoteles:', error);
     document.getElementById('lista-hoteles').innerHTML = '<p>Error al cargar hoteles.</p>';
@@ -253,12 +250,13 @@ async function enviarReserva(event) {
       alert('Reserva realizada con éxito');
       cerrarModal();
 
+      // Cambiar botón a rojo y desactivar
       const boton = document.querySelector(
         `.boton-habitacion[data-hotel="${datos.id_hotel}"][data-num="${datos.num_habitacion}"]`
       );
       if (boton) {
         boton.classList.add('boton-ocupado');
-        boton.textContent = `Habitación ${datos.num_habitacion} (Cancelar)`;
+        boton.disabled = true;
       }
     } else {
       alert('Error: ' + (result.message || 'No se pudo completar la reserva'));
@@ -269,36 +267,7 @@ async function enviarReserva(event) {
   }
 }
 
-// Manejo del clic en habitación: reservar o cancelar
-async function manejarClick(boton) {
-  const hotelId = boton.dataset.hotel;
-  const num = boton.dataset.num;
-
-  if (boton.classList.contains('boton-ocupado')) {
-    const confirmar = confirm(`¿Deseas cancelar la reservación de la habitación ${num}?`);
-    if (!confirmar) return;
-
-    const res = await fetch('/cancelar_reserva', {
-      method: 'DELETE',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ hotel_id: hotelId, num_habitacion: num })
-    });
-
-    const data = await res.json();
-    if (data.success) {
-      boton.classList.remove('boton-ocupado');
-      boton.textContent = `Habitación ${num}`;
-    } else {
-      alert('No se pudo cancelar la reserva');
-    }
-  } else {
-    abrirModal(hotelId, num);
-  }
-}
-
-window.addEventListener('DOMContentLoaded', cargarHoteles);
-</script>
+cargarHoteles();
+  </script>
 </body>
 </html>
-
-
