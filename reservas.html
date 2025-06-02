@@ -267,6 +267,21 @@ async function enviarReserva(event) {
   }
 }
 
+    app.get('/habitaciones_reservadas/:hotelId', async (req, res) => {
+  const { hotelId } = req.params;
+  try {
+    const result = await pool.query(
+      'SELECT num_habitacion FROM reserva WHERE hotel_id = $1',
+      [hotelId]
+    );
+    res.json({ success: true, reservadas: result.rows.map(r => r.num_habitacion) });
+  } catch (error) {
+    console.error('Error al obtener habitaciones reservadas:', error.message);
+    res.status(500).json({ success: false, message: 'Error del servidor' });
+  }
+});
+
+
 cargarHoteles();
   </script>
 </body>
