@@ -282,27 +282,39 @@ app.delete('/api/:tipo/:id', autenticado, esAdmin, validarTipoLugar, async (req,
   }
 });
 
-// Endpoint para reservar una habitación (requiere autenticación)
 app.post('/reservar', autenticado, async (req, res) => {
   try {
-    const { hotel_id, fecha_inicio, fecha_fin, num_personas } = req.body;
+    const {
+      id_hotel,
+      num_habitacion,
+      nombre,
+      correo,
+      celular,
+      fecha_inicio,
+      fecha_fin
+    } = req.body;
 
     // Validación básica de datos
-    if (!hotel_id || !fecha_inicio || !fecha_fin) {
+    if (!id_hotel || !num_habitacion || !nombre || !correo || !celular || !fecha_inicio || !fecha_fin) {
       return res.status(400).json({ error: 'Faltan datos' });
     }
 
     // Validar que usuario esté autenticado
     const usuario_id = req.usuario?.id;
-    if (!usuario_id) return res.status(401).json({ error: 'Usuario no autenticado' });
+    if (!usuario_id) {
+      return res.status(401).json({ error: 'Usuario no autenticado' });
+    }
 
     // Verificar que el hotel exista y obtener habitaciones disponibles
-    const hotelRes = await pool.query('SELECT habitaciones FROM hoteles WHERE id = $1', [hotel_id]);
-    if (hotelRes.rows.length === 0) return res.status(404).json({ error: 'Hotel no encontrado' });
+    const hotelRes = await pool.query('SELECT habitaciones FROM hoteles WHERE id = $1', [id_hotel]);
+    if (hotelRes.rows.length === 0) {
+      return res.status(404).json({ error: 'Hotel no encontrado' });
+    }
 
     const habitaciones = parseInt(hotelRes.rows[0].habitaciones);
-    if (isNaN(habitaciones) || habitaciones < 1)
+    if (isNaN(habitaciones) || habitaciones < 1) {
       return res.status(400).json({ error: 'No hay habitaciones disponibles' });
+    }
 
     // Validar fechas
     const inicio = new Date(fecha_inicio);
@@ -311,40 +323,39 @@ app.post('/reservar', autenticado, async (req, res) => {
       return res.status(400).json({ error: 'Fechas inválidas' });
     }
 
-    // Verificar si el usuario ya tiene una reserva para ese hotel en ese rango
-    const reservaExistente = await pool.query(
-      `SELECT * FROM reservas
-       WHERE usuario_id = $1 AND hotel_id = $2
+    // Verificar que la habitación no esté ocupada para esas fechas
+    const habitacionOcupada = await pool.query(
+      `SELECT * FROM reservas WHERE hotel_id = $1 AND num_habitacion = $2
        AND (
          (fecha_inicio <= $3 AND fecha_fin >= $3) OR
-         (fecha_inicio <= $4 AND fecha_fin >= $4)
+         (fecha_inicio <= $4 AND fecha_fin >= $4) OR
+         (fecha_inicio >= $3 AND fecha_fin <= $4)
        )`,
-      [usuario_id, hotel_id, fecha_inicio, fecha_fin]
+      [id_hotel, num_habitacion, fecha_inicio, fecha_fin]
     );
-    if (reservaExistente.rows.length > 0) {
-      return res.status(400).json({ error: 'Ya tienes una reserva en ese hotel para esas fechas' });
+    if (habitacionOcupada.rows.length > 0) {
+      return res.status(400).json({ error: 'La habitación ya está reservada para esas fechas' });
     }
 
-    // Insertar nueva reserva
+    // Insertar nueva reserva con todos los datos
     await pool.query(
-      `INSERT INTO reservas (usuario_id, hotel_id, fecha_inicio, fecha_fin)
-       VALUES ($1, $2, $3, $4, $5)`,
-      [usuario_id, hotel_id, fecha_inicio, fecha_fin]
+      `INSERT INTO reservas (usuario_id, hotel_id, num_habitacion, nombre, correo, celular, fecha_inicio, fecha_fin)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8)`,
+      [usuario_id, id_hotel, num_habitacion, nombre, correo, celular, fecha_inicio, fecha_fin]
     );
 
     // Descontar una habitación disponible
-    await pool.query('UPDATE hoteles SET habitaciones = habitaciones - 1 WHERE id = $1', [hotel_id]);
+    await pool.query('UPDATE hoteles SET habitaciones = habitaciones - 1 WHERE id = $1', [id_hotel]);
 
     // Emitir evento en tiempo real para actualizar disponibilidad
-    io.emit('actualizarHabitaciones', { hotel_id });
+    io.emit('actualizarHabitaciones', { id_hotel });
 
-    res.json({ mensaje: 'Reserva exitosa' }); // ✅ respuesta en JSON
+    res.json({ mensaje: 'Reserva exitosa' });
   } catch (e) {
     console.error('Error al reservar:', e.message, e.stack);
     res.status(500).json({ error: 'Error al reservar' });
   }
 });
-
 
 // Obtener reservas del usuario autenticado
 app.get('/misReservas', autenticado, async (req, res) => {
