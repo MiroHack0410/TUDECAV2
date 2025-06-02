@@ -350,7 +350,7 @@ app.post('/reservar', autenticado, async (req, res) => {
     // Emitir evento en tiempo real para actualizar disponibilidad
     io.emit('actualizarHabitaciones', { id_hotel });
 
-    res.json({ mensaje: 'Reserva exitosa' });
+    res.json({ success: true, message: 'Reserva exitosa' });
   } catch (e) {
     console.error('Error al reservar:', e.message, e.stack);
     res.status(500).json({ error: 'Error al reservar' });
