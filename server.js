@@ -302,8 +302,21 @@ app.post('/api/reservas', async (req, res) => {
       fecha_fin
     } = req.body;
 
+    // Validar que todos los campos estén presentes
+    if (
+      !nombre || !correo || !celular ||
+      !id_hotel || !num_habitacion ||
+      !fecha_inicio || !fecha_fin
+    ) {
+      return res.status(400).json({ error: 'Faltan campos requeridos' });
+    }
+
     const inicio = new Date(fecha_inicio);
     const fin = new Date(fecha_fin);
+
+    if (fin <= inicio) {
+      return res.status(400).json({ error: 'La fecha fin debe ser posterior a la fecha inicio' });
+    }
 
     // Verificar conflicto con reservas existentes
     const reservaConflicto = await pool.query(
@@ -316,7 +329,7 @@ app.post('/api/reservas', async (req, res) => {
     );
 
     if (reservaConflicto.rows.length > 0) {
-      return res.status(400).json({ error: 'Ya existe una reserva en ese rango de fechas' });
+      return res.status(409).json({ error: 'Ya existe una reserva en ese rango de fechas' });
     }
 
     // Insertar la nueva reserva
@@ -326,7 +339,7 @@ app.post('/api/reservas', async (req, res) => {
       [nombre, correo, celular, id_hotel, num_habitacion, inicio, fin]
     );
 
-    // Emitir evento al frontend
+    // Emitir evento al frontend para actualizar botones
     io.emit('actualizar_reservas', {
       id_hotel,
       num_habitacion
