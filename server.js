@@ -116,10 +116,11 @@ app.post('/login', async (req, res) => {
 
     const token = jwt.sign({ id: user.id, rol: user.rol }, JWT_SECRET, { expiresIn: '2h' });
     res.cookie('token', token, {
-      httpOnly: true,
-      sameSite: 'lax',
-      secure: true, // Importante para producción en HTTPS
+    httpOnly: false,   // <-- IMPORTANTE
+    sameSite: 'Lax',
+    secure: false      // true si usas HTTPS
     });
+
     res.json({ mensaje: 'Login exitoso', rol: user.rol });
   } catch (e) {
     console.error('Error en /login:', e.message);
@@ -276,13 +277,6 @@ app.get('/reservas/habitaciones/:id_hotel', async (req, res) => {
     res.status(500).send('Error al obtener habitaciones reservadas');
   }
 });
-
-res.cookie('token', token, {
-  httpOnly: false, // <- importante
-  sameSite: 'Lax',
-  secure: false
-});
-
 
 server.listen(PORT, () => {
   console.log(`Servidor iniciado en puerto ${PORT}`);
