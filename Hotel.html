@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Reservar Hotel</title>
+  <title>Hoteles</title>
   <style>
     body {
       font-family: Arial, sans-serif;
@@ -11,6 +11,7 @@
       margin: 0;
       padding: 0;
     }
+
     .navbar {
       display: flex;
       justify-content: space-between;
@@ -19,6 +20,7 @@
       padding: 10px 20px;
       position: relative;
     }
+
     .title {
       position: absolute;
       left: 50%;
@@ -27,70 +29,107 @@
       color: white;
       font-weight: bold;
     }
+
     .signup-btn-link {
-      display: inline-block;
       background-color: #5a9352;
       color: white;
       text-decoration: none;
       padding: 10px 25px;
       font-weight: bold;
-      border-radius: 2px;
+      border-radius: 4px;
     }
+
     .signup-btn-link:hover {
       background-color: #4a7946;
     }
-    #lista-hoteles {
-      padding: 2rem;
-      max-width: 900px;
-      margin: 0 auto;
+
+    .dropdown {
+      position: relative;
+      display: inline-block;
     }
-    .hotel {
-      border: 1px solid #ccc;
-      border-radius: 8px;
-      padding: 1rem;
-      margin-bottom: 2rem;
-      background: #fff;
-      box-shadow: 0 0 8px rgba(0,0,0,0.1);
-    }
-    .hotel img {
-      max-width: 100%;
-      height: auto;
-      border-radius: 5px;
-      margin-bottom: 1rem;
-    }
-    .formulario-reserva {
-      margin-top: 1rem;
-      padding-top: 1rem;
-      border-top: 1px solid #ccc;
-    }
-    label {
-      display: block;
-      margin: 0.5rem 0 0.2rem;
-      font-weight: bold;
-    }
-    input, select {
-      width: 100%;
-      padding: 0.4rem;
-      margin-bottom: 0.5rem;
-      border: 1px solid #aaa;
-      border-radius: 4px;
-      font-size: 1rem;
-    }
-    button {
-      padding: 0.6rem 1rem;
-      background-color: #007bff;
+
+    .dropbtn {
+      background-color: #5a9352;
       color: white;
+      padding: 10px 25px;
+      font-size: 16px;
       border: none;
-      border-radius: 4px;
       cursor: pointer;
       font-weight: bold;
-      font-size: 1rem;
     }
-    button:hover {
-      background-color: #0056b3;
+
+    .dropdown-content {
+      display: none;
+      position: absolute;
+      background-color: white;
+      min-width: 160px;
+      box-shadow: 0px 8px 16px rgba(0, 0, 0, 0.2);
+      z-index: 1;
     }
+
+    .dropdown-content a {
+      color: #333;
+      padding: 12px 16px;
+      text-decoration: none;
+      display: block;
+    }
+
+    .dropdown-content a:hover {
+      background-color: #f1f1f1;
+    }
+
+    .dropdown:hover .dropdown-content {
+      display: block;
+    }
+
+    #lista-lugares {
+      padding: 2rem;
+      max-width: 1000px;
+      margin: 0 auto;
+    }
+
+    .card {
+      background-color: #fff;
+      border: 1px solid #ccc;
+      border-radius: 10px;
+      margin-bottom: 2rem;
+      padding: 1rem;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    }
+
+    .card img {
+      width: 100%;
+      height: auto;
+      border-radius: 8px;
+      margin-bottom: 1rem;
+    }
+
+    .card h3 {
+      margin: 0.5rem 0;
+      font-size: 22px;
+      color: #333;
+    }
+
+    .estrellas {
+      font-size: 18px;
+      color: #f5a623;
+      margin-bottom: 0.5rem;
+    }
+
+    .card p {
+      font-size: 16px;
+      color: #555;
+      margin-bottom: 0.5rem;
+    }
+
+    .card small {
+      font-size: 14px;
+      color: #777;
+      display: block;
+      margin-bottom: 1rem;
+    }
+
     .mapa iframe {
-      margin-top: 1rem;
       width: 100%;
       height: 250px;
       border: none;
@@ -107,9 +146,10 @@
           <a href="Hotel.html">Hoteles</a>
           <a href="restaurantes.html">Restaurantes</a>
           <a href="puntos_interes.html">Atracciones</a>
+          <a href="reservas.html">Atracciones</a>
         </div>
       </div>
-      <div href="index.html" class="title">TUDECA</div>
+      <div class="title">TUDECA</div>
       <div><a href="index.html" class="signup-btn-link">Inicio</a></div>
     </div>
   </header>
@@ -119,50 +159,33 @@
   </main>
 
   <script>
-// Después de cargar las tarjetas
-function agregarEventosReserva() {
-  document.querySelectorAll('.btn-reservar').forEach(btn => {
-    btn.addEventListener('click', () => {
-      const hotelId = btn.getAttribute('data-id');
-      const usuarioLogeado = localStorage.getItem('usuario'); // o como manejes sesión
-
-      if (!usuarioLogeado) {
-        window.location.href = 'inicio_sesion.html';
-      } else {
-        localStorage.setItem('hotelSeleccionado', hotelId);
-        window.location.href = 'reservas.html';
+    async function cargarLugares() {
+      try {
+        const res = await fetch('/api/hoteles');
+        const data = await res.json();
+        const contenedor = document.getElementById('lista-lugares');
+        contenedor.innerHTML = '';
+        data.forEach(item => {
+          const card = document.createElement('div');
+          card.className = 'card';
+          card.innerHTML = `
+            <img src="${item.imagen_url}" alt="${item.nombre}" onerror="this.src='/Imagenes/default.jpg'"/>
+            <h3>${item.nombre}</h3>
+            <div class="estrellas">${'★'.repeat(item.estrellas) + '☆'.repeat(5 - item.estrellas)}</div>
+            <p>${item.descripcion}</p>
+            <small>${item.direccion}</small>
+            <div class="mapa">${item.iframe_mapa}</div>
+          `;
+          contenedor.appendChild(card);
+        });
+      } catch(e) {
+        alert('Error al cargar los hoteles.');
+        console.error(e);
       }
-    });
-  });
-}
+    }
 
-async function cargarLugares() {
-  try {
-    const res = await fetch('/api/hoteles');
-    const data = await res.json();
-    const contenedor = document.getElementById('lista-lugares');
-    contenedor.innerHTML = '';
-    data.forEach(item => {
-      const card = document.createElement('div');
-      card.className = 'card';
-      card.innerHTML = `
-        <img src="${item.imagen_url}" alt="${item.nombre}" onerror="this.src='/Imagenes/default.jpg'"/>
-        <h3>${item.nombre}</h3>
-        <div class="estrellas">${'★'.repeat(item.estrellas) + '☆'.repeat(5 - item.estrellas)}</div>
-        <p>${item.descripcion}</p>
-        <small>${item.direccion}</small>
-        <div class="mapa">${item.iframe_mapa}</div>
-      `;
-      contenedor.appendChild(card);
-    });
-    agregarEventosReserva();  // <--- Aquí llamas para agregar eventos a los botones
-  } catch(e) {
-    alert('Error al cargar los hoteles.');
-    console.error(e);
-  }
-}
-
-cargarLugares();
+    cargarLugares();
   </script>
 </body>
 </html>
+
