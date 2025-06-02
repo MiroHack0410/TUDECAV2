@@ -268,15 +268,15 @@ async function enviarReserva(event) {
     return false;
   }
 
-  const reservaData = {
-    id_hotel: Number(hotelId),
-    num_habitacion: Number(habitacionNum),
-    nombre,
-    correo,
-    celular,
-    fecha_inicio: fechaInicio,
-    fecha_fin: fechaFin,
-  };
+const reservaData = {
+  hotel_id: Number(hotelId),
+  num_habitacion: Number(habitacionNum),
+  nombre_huesped: nombre,
+  correo,
+  celular,
+  fecha_inicio: fechaInicio,
+  fecha_fin: fechaFin,
+};
 
   try {
     const res = await fetch('/api/reservas', {
