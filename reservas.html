@@ -179,7 +179,7 @@ async function cargarHoteles() {
     });
 
     if (!res.ok) {
-      throw new Error(`Error HTTP: ${res.status}`);
+      throw new Error(Error HTTP: ${res.status});
     }
 
     const hoteles = await res.json();
@@ -202,17 +202,17 @@ async function cargarHoteles() {
 
       const div = document.createElement('div');
       div.className = 'hotel';
-      div.innerHTML = `
+      div.innerHTML = 
         <h2>${hotel.nombre}</h2>
-        ${hotel.imagen_url ? `<img src="${hotel.imagen_url}" alt="${hotel.nombre}">` : ''}
+        ${hotel.imagen_url ? <img src="${hotel.imagen_url}" alt="${hotel.nombre}"> : ''}
         <p><strong>Estrellas:</strong> ${hotel.estrellas || 'No especificado'}</p>
         <p><strong>Descripción:</strong> ${hotel.descripcion || 'No disponible'}</p>
         <p><strong>Dirección:</strong> ${hotel.direccion || 'No disponible'}</p>
-        ${hotel.iframe_mapa ? `<div class="mapa">${hotel.iframe_mapa}</div>` : ''}
+        ${hotel.iframe_mapa ? <div class="mapa">${hotel.iframe_mapa}</div> : ''}
         <div class="habitaciones" id="habitaciones-hotel-${hotel.id}">
           <strong>Selecciona una habitación:</strong><br/>
           <div class="botones-habitaciones" id="botones-habitaciones-${hotel.id}">
-            ${habitaciones.map(num => `
+            ${habitaciones.map(num => 
               <button
                 class="boton-habitacion ${ocupadas.includes(num) ? 'boton-ocupado' : ''}"
                 onclick="abrirModal(${hotel.id}, ${num})"
@@ -221,16 +221,16 @@ async function cargarHoteles() {
               >
                 Habitación ${num}
               </button>
-            `).join('')}
+            ).join('')}
           </div>
         </div>
-      `;
+      ;
       contenedor.appendChild(div);
     });
   } catch (error) {
     console.error('❌ Error al cargar hoteles:', error);
     const contenedor = document.getElementById('lista-hoteles');
-    contenedor.innerHTML = `<p style="color:red;">Error al cargar hoteles: ${error.message}</p>`;
+    contenedor.innerHTML = <p style="color:red;">Error al cargar hoteles: ${error.message}</p>;
   }
 }
 
@@ -278,19 +278,19 @@ const reservaData = {
   fecha_fin: fechaFin,
 };
 
-await fetch('/api/reservas', {
-  method: 'POST',
-  headers: {
-    'Content-Type': 'application/json'
-  },
-  credentials: 'include', // ← Esto es crucial para que se envíe la cookie
-  body: JSON.stringify(data)
-});
-
+  try {
+    const res = await fetch('/api/reservas', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      credentials: 'include',
+      body: JSON.stringify(reservaData)
+    });
 
     if (!res.ok) {
       const errorData = await res.json();
-      alert(`Error al reservar: ${errorData.message || 'Error desconocido'}`);
+      alert(Error al reservar: ${errorData.message || 'Error desconocido'});
       return false;
     }
 
@@ -326,7 +326,7 @@ window.onload = () => {
   socket.on('actualizar_reservas', (data) => {
     // data: { id_hotel, num_habitacion }
     const boton = document.querySelector(
-      `.boton-habitacion[data-hotel="${data.id_hotel}"][data-num="${data.num_habitacion}"]`
+      .boton-habitacion[data-hotel="${data.id_hotel}"][data-num="${data.num_habitacion}"]
     );
     if (boton) {
       boton.classList.add('boton-ocupado');
