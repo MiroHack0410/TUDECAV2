@@ -288,7 +288,7 @@ app.post('/reservar', autenticado, async (req, res) => {
     const { hotel_id, fecha_inicio, fecha_fin, num_personas } = req.body;
 
     // Validación básica de datos
-    if (!hotel_id || !fecha_inicio || !fecha_fin || !num_personas) {
+    if (!hotel_id || !fecha_inicio || !fecha_fin) {
       return res.status(400).json({ error: 'Faltan datos' });
     }
 
@@ -327,9 +327,9 @@ app.post('/reservar', autenticado, async (req, res) => {
 
     // Insertar nueva reserva
     await pool.query(
-      `INSERT INTO reservas (usuario_id, hotel_id, fecha_inicio, fecha_fin, num_personas)
+      `INSERT INTO reservas (usuario_id, hotel_id, fecha_inicio, fecha_fin)
        VALUES ($1, $2, $3, $4, $5)`,
-      [usuario_id, hotel_id, fecha_inicio, fecha_fin, num_personas]
+      [usuario_id, hotel_id, fecha_inicio, fecha_fin]
     );
 
     // Descontar una habitación disponible
