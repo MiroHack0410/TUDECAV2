@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Reservar Hotel</title>
   <style>
+    /* -- Aquí va todo tu CSS original sin cambio -- */
     body {
       font-family: Arial, sans-serif;
       background-color: #f2f2f2;
@@ -232,6 +233,90 @@ async function cargarHoteles() {
     contenedor.innerHTML = `<p style="color:red;">Error al cargar hoteles: ${error.message}</p>`;
   }
 }
+
+// Función para abrir el modal y llenar campos ocultos
+function abrirModal(idHotel, numHabitacion) {
+  document.getElementById('hotelId').value = idHotel;
+  document.getElementById('habitacionNum').value = numHabitacion;
+  document.getElementById('nombre').value = '';
+  document.getElementById('correo').value = '';
+  document.getElementById('celular').value = '';
+  document.getElementById('fecha_inicio').value = '';
+  document.getElementById('fecha_fin').value = '';
+  document.getElementById('modalReserva').style.display = 'block';
+}
+
+// Función para cerrar el modal
+function cerrarModal() {
+  document.getElementById('modalReserva').style.display = 'none';
+}
+
+// Función para enviar la reserva al backend
+async function enviarReserva(event) {
+  event.preventDefault();
+
+  const hotelId = document.getElementById('hotelId').value;
+  const habitacionNum = document.getElementById('habitacionNum').value;
+  const nombre = document.getElementById('nombre').value.trim();
+  const correo = document.getElementById('correo').value.trim();
+  const celular = document.getElementById('celular').value.trim();
+  const fechaInicio = document.getElementById('fecha_inicio').value;
+  const fechaFin = document.getElementById('fecha_fin').value;
+
+  if (fechaFin <= fechaInicio) {
+    alert('La fecha fin debe ser posterior a la fecha inicio.');
+    return false;
+  }
+
+  const reservaData = {
+    id_hotel: Number(hotelId),
+    num_habitacion: Number(habitacionNum),
+    nombre,
+    correo,
+    celular,
+    fecha_inicio: fechaInicio,
+    fecha_fin: fechaFin,
+  };
+
+  try {
+    const res = await fetch('/api/reservas', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      credentials: 'include',
+      body: JSON.stringify(reservaData)
+    });
+
+    if (!res.ok) {
+      const errorData = await res.json();
+      alert(`Error al reservar: ${errorData.message || 'Error desconocido'}`);
+      return false;
+    }
+
+    alert('Reserva realizada con éxito.');
+    cerrarModal();
+    cargarHoteles(); // Actualiza botones según nuevas reservas
+
+  } catch (error) {
+    alert('Error al enviar la reserva. Intenta de nuevo más tarde.');
+    console.error('Error enviarReserva:', error);
+  }
+
+  return false;
+}
+
+// Evento para cerrar modal si se hace click fuera del contenido
+window.onclick = function(event) {
+  const modal = document.getElementById('modalReserva');
+  if (event.target === modal) {
+    cerrarModal();
+  }
+}
+
+window.onload = () => {
+  cargarHoteles();
+};
 </script>
 
 <script src="https://cdn.socket.io/4.6.1/socket.io.min.js"></script>
@@ -249,5 +334,7 @@ async function cargarHoteles() {
     }
   });
 </script>
+</body>
+</html>
 </body>
 </html>
