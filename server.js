@@ -5,6 +5,8 @@ const jwt = require('jsonwebtoken');
 const bcrypt = require('bcryptjs');
 const cookieParser = require('cookie-parser');
 const cors = require('cors');
+const http = require('http');               // Agregado para socket.io
+const { Server } = require('socket.io');    // Agregado para socket.io
 require('dotenv').config();
 
 const app = express();
@@ -17,7 +19,7 @@ const pool = new Pool({
 });
 
 app.use(cors({
-  origin: 'https://tudecafront.onrender.com',
+  origin: 'https://tudecafront.onrender.com', // Cambiar por tu frontend real
   credentials: true,
 }));
 
@@ -27,6 +29,27 @@ app.use(cookieParser());
 
 app.use(express.static(__dirname));
 app.use('/Imagenes', express.static(path.join(__dirname, 'Imagenes')));
+
+// Crear servidor HTTP con Express
+const server = http.createServer(app);
+
+// Configurar socket.io
+const io = new Server(server, {
+  cors: {
+    origin: 'https://tudecafront.onrender.com', // Cambiar por tu frontend real
+    methods: ['GET', 'POST'],
+    credentials: true,
+  }
+});
+
+// Escuchar conexiones socket.io
+io.on('connection', (socket) => {
+  console.log('Usuario conectado con socket id:', socket.id);
+
+  socket.on('disconnect', () => {
+    console.log('Usuario desconectado:', socket.id);
+  });
+});
 
 // Middleware JWT
 function autenticado(req, res, next) {
@@ -221,6 +244,10 @@ app.post('/reservar', async (req, res) => {
        VALUES ($1,$2,$3,$4,$5,$6,$7)`,
       [nombre, correo, celular, fecha_inicio, fecha_fin, num_habitacion, id_hotel]
     );
+
+    // Emitir evento para que clientes actualicen habitaciones reservadas
+    io.emit('actualizar_reservas', { id_hotel, num_habitacion });
+
     res.json({ success: true, message: 'Reserva creada' });
   } catch (error) {
     res.status(500).json({ success: false, message: 'Error al crear reserva' });
@@ -250,8 +277,11 @@ app.get('/reservas/habitaciones/:id_hotel', async (req, res) => {
   }
 });
 
-// Servidor en escucha
-app.listen(PORT, () => {
+// Iniciar servidor con socket.io
+server.listen(PORT, () => {
   console.log(`Servidor iniciado en puerto ${PORT}`);
 });
 
+app.listen(PORT, () => {
+  console.log(`Servidor iniciado en puerto ${PORT}`);
+});
