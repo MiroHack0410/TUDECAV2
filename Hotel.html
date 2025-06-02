@@ -181,9 +181,20 @@
       });
 
       agregarEventosReserva();
-    } 
+    } catch (e) {
+      alert('Error al cargar los hoteles.');
+      console.error(e);
+    }
   }
 
+  function agregarEventosReserva() {
+    document.querySelectorAll('.btn-reservar').forEach(btn => {
+      btn.addEventListener('click', () => {
+        // Aquí solo redirige siempre a la página de reservas
+        window.location.href = 'reservas.html';
+      });
+    });
+  }
 
   socket.on('actualizar_reservas', () => {
     console.log("Actualización de reservas recibida");
