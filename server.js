@@ -227,8 +227,8 @@ app.post('/reservar', async (req, res) => {
   }
 });
 
-// Obtener todas las reservas (admin)
-app.get('/reservas', autenticado, esAdmin, async (req, res) => {
+// Obtener todas las reservas
+app.get('/reservas', autenticado, async (req, res) => {
   try {
     const result = await pool.query('SELECT * FROM reserva ORDER BY id DESC');
     res.json(result.rows);
