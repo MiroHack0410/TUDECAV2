@@ -51,6 +51,7 @@ const tablasValidas = {
   restaurantes: 'restaurantes',
   puntos_interes: 'puntos_interes',
 };
+
 function validarTipoLugar(req, res, next) {
   const { tipo } = req.params;
   if (!tablasValidas[tipo]) return res.status(400).send('Tipo inválido');
@@ -80,7 +81,6 @@ app.post('/registro', async (req, res) => {
   }
 });
 
-
 // Login
 app.post('/login', async (req, res) => {
   const { usuario, password } = req.body;
@@ -95,7 +95,7 @@ app.post('/login', async (req, res) => {
     res.cookie('token', token, {
       httpOnly: true,
       sameSite: 'lax',
-      secure: true, // Importante para producción en HTTPS
+      secure: true,
     });
     res.json({ mensaje: 'Login exitoso', rol: user.rol });
   } catch (e) {
@@ -133,7 +133,7 @@ app.get('/perfil', autenticado, async (req, res) => {
 // GET todos
 app.get('/api/:tipo', validarTipoLugar, async (req, res) => {
   try {
-    const result = await pool.query(SELECT * FROM ${req.tabla} ORDER BY id DESC);
+    const result = await pool.query(`SELECT * FROM ${req.tabla} ORDER BY id DESC`);
     res.json(result.rows);
   } catch {
     res.status(500).send('Error al obtener');
@@ -143,7 +143,7 @@ app.get('/api/:tipo', validarTipoLugar, async (req, res) => {
 // GET uno
 app.get('/api/:tipo/:id', validarTipoLugar, async (req, res) => {
   try {
-    const result = await pool.query(SELECT * FROM ${req.tabla} WHERE id = $1, [req.params.id]);
+    const result = await pool.query(`SELECT * FROM ${req.tabla} WHERE id = $1`, [req.params.id]);
     if (result.rows.length === 0) return res.status(404).send('No encontrado');
     res.json(result.rows[0]);
   } catch {
@@ -161,10 +161,8 @@ app.post('/api/:tipo', autenticado, esAdmin, validarTipoLugar, async (req, res) 
       ? [nombre, estrellas || null, descripcion || null, direccion || null, iframe_mapa || null, imagen_url || null, num_habitaciones || null]
       : [nombre, estrellas || null, descripcion || null, direccion || null, iframe_mapa || null, imagen_url || null];
     const query = req.tabla === 'hoteles'
-      ? INSERT INTO hoteles (nombre, estrellas, descripcion, direccion, iframe_mapa, imagen_url, num_habitaciones)
-         VALUES ($1,$2,$3,$4,$5,$6,$7) RETURNING *
-      : INSERT INTO ${req.tabla} (nombre, estrellas, descripcion, direccion, iframe_mapa, imagen_url)
-         VALUES ($1,$2,$3,$4,$5,$6) RETURNING *;
+      ? 'INSERT INTO hoteles (nombre, estrellas, descripcion, direccion, iframe_mapa, imagen_url, num_habitaciones) VALUES ($1,$2,$3,$4,$5,$6,$7) RETURNING *'
+      : `INSERT INTO ${req.tabla} (nombre, estrellas, descripcion, direccion, iframe_mapa, imagen_url) VALUES ($1,$2,$3,$4,$5,$6) RETURNING *`;
 
     const result = await pool.query(query, campos);
     res.json({ success: true, data: result.rows[0] });
@@ -180,15 +178,15 @@ app.put('/api/:tipo/:id', autenticado, esAdmin, validarTipoLugar, async (req, re
   const id = req.params.id;
 
   try {
-    const exist = await pool.query(SELECT * FROM ${req.tabla} WHERE id = $1, [id]);
+    const exist = await pool.query(`SELECT * FROM ${req.tabla} WHERE id = $1`, [id]);
     if (exist.rows.length === 0) return res.status(404).send('No encontrado');
 
     const campos = req.tabla === 'hoteles'
       ? [nombre, estrellas, descripcion, direccion, iframe_mapa, imagen_url, num_habitaciones, id]
       : [nombre, estrellas, descripcion, direccion, iframe_mapa, imagen_url, id];
     const query = req.tabla === 'hoteles'
-      ? UPDATE hoteles SET nombre=$1, estrellas=$2, descripcion=$3, direccion=$4, iframe_mapa=$5, imagen_url=$6, num_habitaciones=$7 WHERE id=$8 RETURNING *
-      : UPDATE ${req.tabla} SET nombre=$1, estrellas=$2, descripcion=$3, direccion=$4, iframe_mapa=$5, imagen_url=$6 WHERE id=$7 RETURNING *;
+      ? 'UPDATE hoteles SET nombre=$1, estrellas=$2, descripcion=$3, direccion=$4, iframe_mapa=$5, imagen_url=$6, num_habitaciones=$7 WHERE id=$8 RETURNING *'
+      : `UPDATE ${req.tabla} SET nombre=$1, estrellas=$2, descripcion=$3, direccion=$4, iframe_mapa=$5, imagen_url=$6 WHERE id=$7 RETURNING *`;
 
     const result = await pool.query(query, campos);
     res.json({ success: true, data: result.rows[0] });
@@ -201,7 +199,7 @@ app.put('/api/:tipo/:id', autenticado, esAdmin, validarTipoLugar, async (req, re
 app.delete('/api/:tipo/:id', autenticado, esAdmin, validarTipoLugar, async (req, res) => {
   try {
     const id = req.params.id;
-    const result = await pool.query(DELETE FROM ${req.tabla} WHERE id = $1 RETURNING *, [id]);
+    const result = await pool.query(`DELETE FROM ${req.tabla} WHERE id = $1 RETURNING *`, [id]);
     if (result.rows.length === 0) return res.status(404).send('No encontrado');
     res.json({ success: true, message: 'Eliminado correctamente' });
   } catch {
@@ -217,8 +215,7 @@ app.post('/reservar', async (req, res) => {
   }
   try {
     await pool.query(
-      INSERT INTO reserva (nombre_huesped, correo, celular, fecha_inicio, fecha_fin, num_habitacion, hotel_id)
-       VALUES ($1,$2,$3,$4,$5,$6,$7),
+      'INSERT INTO reserva (nombre_huesped, correo, celular, fecha_inicio, fecha_fin, num_habitacion, hotel_id) VALUES ($1,$2,$3,$4,$5,$6,$7)',
       [nombre, correo, celular, fecha_inicio, fecha_fin, num_habitacion, id_hotel]
     );
     res.json({ success: true, message: 'Reserva creada' });
@@ -241,7 +238,7 @@ app.get('/reservas', autenticado, async (req, res) => {
 app.get('/reservas/habitaciones/:id_hotel', async (req, res) => {
   try {
     const result = await pool.query(
-      SELECT num_habitacion FROM reserva WHERE hotel_id = $1,
+      'SELECT num_habitacion FROM reserva WHERE hotel_id = $1',
       [req.params.id_hotel]
     );
     res.json(result.rows.map(r => r.num_habitacion));
@@ -252,5 +249,5 @@ app.get('/reservas/habitaciones/:id_hotel', async (req, res) => {
 
 // Servidor en escucha
 app.listen(PORT, () => {
-  console.log(Servidor iniciado en puerto ${PORT});
+  console.log(`Servidor iniciado en puerto ${PORT}`);
 });
