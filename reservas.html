@@ -269,5 +269,20 @@ async function enviarReserva(event) {
 
 cargarHoteles();
   </script>
+<script src="https://cdn.socket.io/4.6.1/socket.io.min.js"></script>
+<script>
+  const socket = io();
+
+  socket.on('actualizar_reservas', (data) => {
+    // data: { id_hotel, num_habitacion }
+    const boton = document.querySelector(
+      `.boton-habitacion[data-hotel="${data.id_hotel}"][data-num="${data.num_habitacion}"]`
+    );
+    if (boton) {
+      boton.classList.add('boton-ocupado');
+      boton.disabled = true;
+    }
+  });
+</script>
 </body>
 </html>
