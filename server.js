@@ -70,8 +70,7 @@ app.post('/registro', async (req, res) => {
 
     const hashedPassword = await bcrypt.hash(password, 10);
     await pool.query(
-      INSERT INTO usuariosv2 (nombre, apellido, telefono, correo, sexo, password, rol)
-       VALUES ($1, $2, $3, $4, $5, $6, 2),
+      'INSERT INTO usuariosv2 (nombre, apellido, telefono, correo, sexo, password, rol) VALUES ($1, $2, $3, $4, $5, $6, 2)',
       [nombre, apellido, telefono || '', correo, sexo, hashedPassword]
     );
     res.json({ success: true, message: 'Usuario registrado correctamente' });
@@ -80,6 +79,7 @@ app.post('/registro', async (req, res) => {
     res.status(500).json({ success: false, message: 'Error interno del servidor' });
   }
 });
+
 
 // Login
 app.post('/login', async (req, res) => {
