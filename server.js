@@ -20,8 +20,12 @@ const pool = new Pool({
   ssl: isProduction ? { rejectUnauthorized: false } : false,
 });
 
+const allowedOrigin = isProduction
+  ? 'https://tudecafront.onrender.com' // Cambia aquí a tu frontend real en producción
+  : 'http://localhost:3000';
+
 app.use(cors({
-  origin: 'https://tudecafront.onrender.com', // Cambia a tu frontend real
+  origin: allowedOrigin,
   credentials: true,
 }));
 
@@ -36,7 +40,7 @@ const server = http.createServer(app);
 
 const io = new Server(server, {
   cors: {
-    origin: 'https://tudecafront.onrender.com',
+    origin: allowedOrigin,
     methods: ['GET', 'POST'],
     credentials: true,
   }
@@ -47,6 +51,10 @@ io.on('connection', (socket) => {
 
   socket.on('disconnect', () => {
     console.log('Usuario desconectado:', socket.id);
+  });
+
+  socket.on('error', (err) => {
+    console.error('Error en socket:', err);
   });
 });
 
@@ -116,7 +124,7 @@ app.post('/login', async (req, res) => {
 
     const token = jwt.sign({ id: user.id, rol: user.rol }, JWT_SECRET, { expiresIn: '2h' });
     res.cookie('token', token, {
-      httpOnly: false,
+      httpOnly: true,
       sameSite: isProduction ? 'None' : 'Lax',
       secure: isProduction,
       maxAge: 2 * 60 * 60 * 1000,
@@ -132,7 +140,7 @@ app.post('/login', async (req, res) => {
 // Logout
 app.post('/logout', (req, res) => {
   res.clearCookie('token', {
-    httpOnly: false,
+    httpOnly: true,
     sameSite: isProduction ? 'None' : 'Lax',
     secure: isProduction,
   });
@@ -234,7 +242,6 @@ app.get('/api/:tipo/:id', validarTipoLugar, async (req, res) => {
 app.post('/api/:tipo', autenticado, esAdmin, validarTipoLugar, async (req, res) => {
   try {
     const tabla = req.tabla;
-    // Para simplificar, asumo que recibes todas las columnas que necesites en req.body
     const cols = Object.keys(req.body);
     const vals = Object.values(req.body);
 
@@ -265,6 +272,7 @@ app.put('/api/:tipo/:id', autenticado, esAdmin, validarTipoLugar, async (req, re
     if (result.rows.length === 0) return res.status(404).send('No encontrado');
     res.json(result.rows[0]);
   } catch (e) {
+    console.error(e);
     res.status(500).send('Error al actualizar');
   }
 });
@@ -274,7 +282,7 @@ app.delete('/api/:tipo/:id', autenticado, esAdmin, validarTipoLugar, async (req,
   try {
     const tabla = req.tabla;
     const id = parseInt(req.params.id);
-    const result = await pool.query(`DELETE FROM ${tabla} WHERE id = $1 RETURNING *`, [id]);
+    const result = await pool.query(`DELETE FROM ${tabla} WHERE id=$1 RETURNING *`, [id]);
     if (result.rows.length === 0) return res.status(404).send('No encontrado');
     res.send('Eliminado');
   } catch (e) {
@@ -282,103 +290,62 @@ app.delete('/api/:tipo/:id', autenticado, esAdmin, validarTipoLugar, async (req,
   }
 });
 
+// Reservas
 app.post('/api/reservas', autenticado, async (req, res) => {
   try {
-    const {
-      id_hotel,
-      num_habitacion,
-      nombre,
-      correo,
-      celular,
-      fecha_inicio,
-      fecha_fin
-    } = req.body;
-
-    // Validación básica de datos
-    if (!id_hotel || !num_habitacion || !nombre || !correo || !celular || !fecha_inicio || !fecha_fin) {
-      return res.status(400).json({ error: 'Faltan datos' });
+    const { hotel_id, habitacion_id, fecha_inicio, fecha_fin } = req.body;
+    if (!hotel_id || !habitacion_id || !fecha_inicio || !fecha_fin) {
+      return res.status(400).json({ error: 'Faltan datos obligatorios' });
     }
 
-    // Validar que usuario esté autenticado
-    const usuario_id = req.usuario?.id;
-    if (!usuario_id) {
-      return res.status(401).json({ error: 'Usuario no autenticado' });
-    }
-
-    // Verificar que el hotel exista y obtener habitaciones disponibles
-    const hotelRes = await pool.query('SELECT habitaciones FROM hoteles WHERE id = $1', [id_hotel]);
-    if (hotelRes.rows.length === 0) {
-      return res.status(404).json({ error: 'Hotel no encontrado' });
-    }
-
-    const habitaciones = parseInt(hotelRes.rows[0].habitaciones);
-    if (isNaN(habitaciones) || habitaciones < 1) {
-      return res.status(400).json({ error: 'No hay habitaciones disponibles' });
-    }
-
-    // Validar fechas
     const inicio = new Date(fecha_inicio);
     const fin = new Date(fecha_fin);
-    if (isNaN(inicio.getTime()) || isNaN(fin.getTime()) || inicio >= fin) {
-      return res.status(400).json({ error: 'Fechas inválidas' });
+    const hoy = new Date();
+    hoy.setHours(0, 0, 0, 0);
+
+    if (inicio < hoy) {
+      return res.status(400).json({ error: 'Fecha de inicio debe ser hoy o posterior' });
+    }
+    if (fin <= inicio) {
+      return res.status(400).json({ error: 'Fecha de fin debe ser mayor que fecha de inicio' });
     }
 
-    // Verificar que la habitación no esté ocupada para esas fechas
-    const habitacionOcupada = await pool.query(
-      `SELECT * FROM reservas WHERE hotel_id = $1 AND num_habitacion = $2
-       AND (
-         (fecha_inicio <= $3 AND fecha_fin >= $3) OR
-         (fecha_inicio <= $4 AND fecha_fin >= $4) OR
-         (fecha_inicio >= $3 AND fecha_fin <= $4)
-       )`,
-      [id_hotel, num_habitacion, fecha_inicio, fecha_fin]
+    // Verificar si hay disponibilidad
+    const reservaConflicto = await pool.query(
+      `SELECT * FROM reservas
+       WHERE habitacion_id = $1
+         AND fecha_fin > $2
+         AND fecha_inicio < $3`,
+      [habitacion_id, inicio, fin]
     );
-    if (habitacionOcupada.rows.length > 0) {
-      return res.status(400).json({ error: 'La habitación ya está reservada para esas fechas' });
+
+    if (reservaConflicto.rowCount > 0) {
+      return res.status(409).json({ error: 'Habitación ya reservada en esas fechas' });
     }
 
-    // Insertar nueva reserva con todos los datos
+    // Insertar reserva
     await pool.query(
-      `INSERT INTO reservas (usuario_id, hotel_id, num_habitacion, nombre, correo, celular, fecha_inicio, fecha_fin)
-       VALUES ($1, $2, $3, $4, $5, $6, $7, $8)`,
-      [usuario_id, id_hotel, num_habitacion, nombre, correo, celular, fecha_inicio, fecha_fin]
+      `INSERT INTO reservas (usuario_id, hotel_id, habitacion_id, fecha_inicio, fecha_fin)
+       VALUES ($1, $2, $3, $4, $5)`,
+      [req.usuario.id, hotel_id, habitacion_id, inicio, fin]
     );
 
-    // Descontar una habitación disponible
-    await pool.query('UPDATE hoteles SET habitaciones = habitaciones - 1 WHERE id = $1', [id_hotel]);
+    // Actualizar habitaciones disponibles del hotel restando 1, sin bajar de 0
+    await pool.query(
+      `UPDATE hoteles SET habitaciones = GREATEST(habitaciones - 1, 0) WHERE id = $1`,
+      [hotel_id]
+    );
 
-    // Emitir evento en tiempo real para actualizar disponibilidad
-    io.emit('actualizarHabitaciones', { id_hotel });
+    // Emitir evento por socket para notificar actualización
+    io.emit('actualizarHabitaciones', { hotel_id });
 
-    res.json({ success: true, message: 'Reserva exitosa' });
+    res.json({ mensaje: 'Reserva realizada con éxito' });
   } catch (e) {
-    console.error('Error al reservar:', e.message, e.stack);
-    res.status(500).json({ error: 'Error al reservar' });
+    console.error('Error al reservar:', e);
+    res.status(500).json({ error: 'Error al realizar la reserva' });
   }
 });
 
-// Obtener reservas del usuario autenticado
-app.get('/misReservas', autenticado, async (req, res) => {
-  try {
-    const result = await pool.query(
-      `SELECT r.*, h.nombre as hotel_nombre
-       FROM reservas r
-       JOIN hoteles h ON r.hotel_id = h.id
-       WHERE r.usuario_id = $1`,
-      [req.usuario.id]
-    );
-    res.json(result.rows);
-  } catch (e) {
-    res.status(500).send('Error al obtener reservas');
-  }
-});
-
-// Página 404 para rutas no encontradas
-app.use((req, res) => {
-  res.status(404).send('Ruta no encontrada');
-});
-
-// Iniciar servidor
 server.listen(PORT, () => {
-  console.log(`Servidor iniciado en puerto ${PORT}`);
+  console.log(`Servidor escuchando en http://localhost:${PORT}`);
 });
