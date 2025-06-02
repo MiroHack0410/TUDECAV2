@@ -292,6 +292,7 @@ app.delete('/api/:tipo/:id', autenticado, esAdmin, validarTipoLugar, async (req,
 
 // Reservas 
 app.post('/api/reservas', autenticado, async (req, res) => {
+  try {
     const {
       nombre,
       correo,
