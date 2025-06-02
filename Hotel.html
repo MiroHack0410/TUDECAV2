@@ -155,16 +155,31 @@
     <div id="lista-lugares"></div>
   </main>
 
+<script src="/socket.io/socket.io.js"></script>
 <script>
+  // Establecer conexión con el servidor de WebSocket
+  const socket = io();
+
+  // Función para verificar si el usuario ha iniciado sesión
+  function estaLogueado() {
+    // Supongamos que usas una cookie llamada 'token' para el JWT
+    return document.cookie.split(';').some(c => c.trim().startsWith('token='));
+  }
+
   // Esta función añade el evento "click" a todos los botones "Reservar"
   function agregarEventosReserva() {
     document.querySelectorAll('.btn-reservar').forEach(btn => {
       btn.addEventListener('click', () => {
         const hotelId = btn.getAttribute('data-id');
-        // Guarda el ID del hotel seleccionado en localStorage
         localStorage.setItem('hotelSeleccionado', hotelId);
-        // Redirige a la página de reservas
-        window.location.href = 'reservas.html';
+
+        // Redirección dependiendo si el usuario está logueado
+        if (estaLogueado()) {
+          window.location.href = 'reservas.html';
+        } else {
+          alert("Debe iniciar sesión para reservar.");
+          window.location.href = 'inicio_sesion.html';
+        }
       });
     });
   }
@@ -192,7 +207,6 @@
         contenedor.appendChild(card);
       });
 
-      // Se agregan los eventos después de haber generado todas las tarjetas
       agregarEventosReserva();
     } catch (e) {
       alert('Error al cargar los hoteles.');
@@ -200,7 +214,12 @@
     }
   }
 
-  // Llamamos a la función al cargar la página
+  // WebSocket: Escucha cuando hay una actualización de hoteles
+  socket.on('actualizar_hoteles', () => {
+    console.log("Actualización de hoteles recibida por WebSocket");
+    cargarLugares();
+  });
+
   window.onload = cargarLugares;
 </script>
 </body>
