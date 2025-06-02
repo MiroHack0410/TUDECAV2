@@ -282,7 +282,7 @@ app.delete('/api/:tipo/:id', autenticado, esAdmin, validarTipoLugar, async (req,
   }
 });
 
-app.post('/reservar', autenticado, async (req, res) => {
+app.post('/api/reservas', autenticado, async (req, res) => {
   try {
     const {
       id_hotel,
