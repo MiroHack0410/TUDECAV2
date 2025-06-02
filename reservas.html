@@ -5,7 +5,6 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Reservar Hotel</title>
   <style>
-    /* -- CSS original sin cambio -- */
     body {
       font-family: Arial, sans-serif;
       background-color: #f2f2f2;
@@ -171,32 +170,16 @@
     </div>
   </div>
 
-<script>
+  <script>
 async function cargarHoteles() {
   try {
-    const res = await fetch('/api/hoteles', {
-      credentials: 'include' // Enviar cookies para autenticación
-    });
-
-    if (!res.ok) {
-      throw new Error(`Error HTTP: ${res.status}`);
-    }
-
+    const res = await fetch('/api/hoteles');
     const hoteles = await res.json();
-
     const contenedor = document.getElementById('lista-hoteles');
     contenedor.innerHTML = '';
 
-    if (!Array.isArray(hoteles) || hoteles.length === 0) {
-      contenedor.innerHTML = '<p>No hay hoteles disponibles.</p>';
-      return;
-    }
-
     hoteles.forEach(hotel => {
-      const habitaciones = Array.from(
-        { length: Number(hotel.num_habitaciones) || 1 },
-        (_, i) => i + 1
-      );
+      const habitaciones = Array.from({ length: Number(hotel.num_habitaciones) || 1 }, (_, i) => i + 1);
       const ocupadas = hotel.habitaciones_ocupadas || [];
 
       const div = document.createElement('div');
@@ -228,102 +211,65 @@ async function cargarHoteles() {
     });
   } catch (error) {
     console.error('Error al cargar hoteles:', error);
-    document.getElementById('lista-hoteles').innerHTML = `<p style="color:red;">Error al cargar hoteles: ${error.message}</p>`;
+    document.getElementById('lista-hoteles').innerHTML = '<p>Error al cargar hoteles.</p>';
   }
 }
 
-function abrirModal(idHotel, numHabitacion) {
-  document.getElementById('hotelId').value = idHotel;
-  document.getElementById('habitacionNum').value = numHabitacion;
-  document.getElementById('nombre').value = '';
-  document.getElementById('correo').value = '';
-  document.getElementById('celular').value = '';
-  document.getElementById('fecha_inicio').value = '';
-  document.getElementById('fecha_fin').value = '';
+function abrirModal(hotelId, habitacionNum) {
+  document.getElementById('hotelId').value = hotelId;
+  document.getElementById('habitacionNum').value = habitacionNum;
   document.getElementById('modalReserva').style.display = 'block';
 }
 
 function cerrarModal() {
   document.getElementById('modalReserva').style.display = 'none';
+  document.getElementById('formReserva').reset();
 }
 
 async function enviarReserva(event) {
   event.preventDefault();
-
-  const hotelId = document.getElementById('hotelId').value;
-  const habitacionNum = document.getElementById('habitacionNum').value;
-  const nombre = document.getElementById('nombre').value.trim();
-  const correo = document.getElementById('correo').value.trim();
-  const celular = document.getElementById('celular').value.trim();
-  const fechaInicio = document.getElementById('fecha_inicio').value;
-  const fechaFin = document.getElementById('fecha_fin').value;
-
-  if (fechaFin <= fechaInicio) {
-    alert('La fecha fin debe ser posterior a la fecha inicio.');
-    return false;
-  }
-
-  const reservaData = {
-  id_hotel: Number(hotelId),
-  num_habitacion: Number(habitacionNum),
-  nombre: nombre,
-  correo,
-  celular,
-  fecha_inicio: fechaInicio,
-  fecha_fin: fechaFin,
-};
+  const datos = {
+    id_hotel: document.getElementById('hotelId').value,
+    num_habitacion: document.getElementById('habitacionNum').value,
+    nombre: document.getElementById('nombre').value.trim(),
+    correo: document.getElementById('correo').value.trim(),
+    celular: document.getElementById('celular').value.trim(),
+    fecha_inicio: document.getElementById('fecha_inicio').value,
+    fecha_fin: document.getElementById('fecha_fin').value
+  };
 
   try {
-    const res = await fetch('/api/reservas', {
+    const res = await fetch('/reservar', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      credentials: 'include',
-      body: JSON.stringify(reservaData)
+      body: JSON.stringify(datos)
     });
 
-    if (!res.ok) {
-      const errorData = await res.json();
-      alert(`Error al reservar: ${errorData.error || 'Error desconocido'}`);
-      return false;
+    const result = await res.json();
+    if (result.success) {
+      alert('Reserva realizada con éxito');
+      cerrarModal();
+
+      // Cambiar botón a rojo y desactivar
+      const boton = document.querySelector(
+        `.boton-habitacion[data-hotel="${datos.id_hotel}"][data-num="${datos.num_habitacion}"]`
+      );
+      if (boton) {
+        boton.classList.add('boton-ocupado');
+        boton.disabled = true;
+      }
+    } else {
+      alert('Error: ' + (result.message || 'No se pudo completar la reserva'));
     }
-
-    alert('Reserva realizada con éxito.');
-    cerrarModal();
-
   } catch (error) {
-    alert('Error al enviar la reserva. Intenta de nuevo más tarde.');
-    console.error('Error enviarReserva:', error);
-  }
-
-  return false;
-}
-
-window.onclick = function(event) {
-  const modal = document.getElementById('modalReserva');
-  if (event.target === modal) {
-    cerrarModal();
+    alert('Error al reservar');
+    console.error(error);
   }
 }
 
-window.onload = () => {
-  cargarHoteles();
-};
-</script>
-
-<script src="https://cdn.socket.io/4.6.1/socket.io.min.js"></script>
-<script>
-  const socket = io();
-
-  socket.on('actualizar_reservas', (data) => {
-    const boton = document.querySelector(
-      `.boton-habitacion[data-hotel="${data.id_hotel}"][data-num="${data.num_habitacion}"]`
-    );
-    if (boton) {
-      boton.classList.add('boton-ocupado');
-      boton.disabled = true;
-    }
-  });
-</script>
+cargarHoteles();
+  </script>
 </body>
 </html>
+
 
