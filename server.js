@@ -13,26 +13,22 @@ const JWT_SECRET = process.env.JWT_SECRET || 'yajdielemirbaxinbaez0410';
 
 const pool = new Pool({
   connectionString: process.env.DATABASE_URL,
-  ssl: { rejectUnauthorized: false }, // obligatorio para Render y PG en cloud
+  ssl: { rejectUnauthorized: false },
 });
 
-// Ajusta aquí el origen de tu frontend (URL exacta, con https)
-const FRONTEND_URL = 'https://tudecafront.onrender.com';
-
 app.use(cors({
-  origin: FRONTEND_URL,
-  credentials: true, // muy importante para cookies
+  origin: 'https://tudecafront.onrender.com',
+  credentials: true,
 }));
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
 
-// Archivos estáticos para imágenes y frontend si tienes
-app.use(express.static(path.join(__dirname, 'public')));
+app.use(express.static(__dirname));
 app.use('/Imagenes', express.static(path.join(__dirname, 'Imagenes')));
 
-// Middleware JWT - para rutas protegidas
+// Middleware JWT
 function autenticado(req, res, next) {
   const token = req.cookies.token;
   if (!token) return res.status(401).send('No autenticado');
@@ -63,7 +59,7 @@ function validarTipoLugar(req, res, next) {
   next();
 }
 
-// Registro de usuario
+// Registro
 app.post('/registro', async (req, res) => {
   const { nombre, apellido, telefono, correo, sexo, password } = req.body;
   if (!nombre || !apellido || !correo || !password || !sexo) {
@@ -98,9 +94,8 @@ app.post('/login', async (req, res) => {
     const token = jwt.sign({ id: user.id, rol: user.rol }, JWT_SECRET, { expiresIn: '2h' });
     res.cookie('token', token, {
       httpOnly: true,
-      sameSite: 'none', // con HTTPS y cross-site debe ser none
-      secure: true,     // obligatorio para HTTPS (Render usa HTTPS)
-      maxAge: 2 * 60 * 60 * 1000, // 2 horas en ms
+      sameSite: 'lax',
+      secure: true,
     });
     res.json({ mensaje: 'Login exitoso', rol: user.rol });
   } catch (e) {
@@ -113,13 +108,13 @@ app.post('/login', async (req, res) => {
 app.post('/logout', (req, res) => {
   res.clearCookie('token', {
     httpOnly: true,
-    sameSite: 'none',
+    sameSite: 'lax',
     secure: true,
   });
   res.status(200).send('Logout exitoso');
 });
 
-// Perfil usuario autenticado
+// Perfil
 app.get('/perfil', autenticado, async (req, res) => {
   try {
     const userId = req.usuario.id;
@@ -135,16 +130,13 @@ app.get('/perfil', autenticado, async (req, res) => {
   }
 });
 
-// Rutas API para hoteles, restaurantes, puntos_interes
-
 // GET todos
 app.get('/api/:tipo', validarTipoLugar, async (req, res) => {
   try {
     const result = await pool.query(`SELECT * FROM ${req.tabla} ORDER BY id DESC`);
     res.json(result.rows);
-  } catch (error) {
-    console.error('Error en GET /api/:tipo:', error.message);
-    res.status(500).send('Error al obtener datos');
+  } catch {
+    res.status(500).send('Error al obtener');
   }
 });
 
@@ -154,13 +146,12 @@ app.get('/api/:tipo/:id', validarTipoLugar, async (req, res) => {
     const result = await pool.query(`SELECT * FROM ${req.tabla} WHERE id = $1`, [req.params.id]);
     if (result.rows.length === 0) return res.status(404).send('No encontrado');
     res.json(result.rows[0]);
-  } catch (error) {
-    console.error('Error en GET /api/:tipo/:id:', error.message);
-    res.status(500).send('Error al obtener dato');
+  } catch {
+    res.status(500).send('Error al obtener');
   }
 });
 
-// POST crear (solo admin)
+// POST crear
 app.post('/api/:tipo', autenticado, esAdmin, validarTipoLugar, async (req, res) => {
   const { nombre, estrellas, descripcion, direccion, iframe_mapa, imagen_url, num_habitaciones } = req.body;
   if (!nombre) return res.status(400).send('Falta nombre');
@@ -181,7 +172,7 @@ app.post('/api/:tipo', autenticado, esAdmin, validarTipoLugar, async (req, res) 
   }
 });
 
-// PUT actualizar (solo admin)
+// PUT actualizar
 app.put('/api/:tipo/:id', autenticado, esAdmin, validarTipoLugar, async (req, res) => {
   const { nombre, estrellas, descripcion, direccion, iframe_mapa, imagen_url, num_habitaciones } = req.body;
   const id = req.params.id;
@@ -200,27 +191,23 @@ app.put('/api/:tipo/:id', autenticado, esAdmin, validarTipoLugar, async (req, re
     const result = await pool.query(query, campos);
     res.json({ success: true, data: result.rows[0] });
   } catch (error) {
-    console.error('Error en PUT /api:', error.message);
     res.status(500).send('Error al actualizar');
   }
 });
 
-// DELETE eliminar (solo admin)
+// DELETE eliminar
 app.delete('/api/:tipo/:id', autenticado, esAdmin, validarTipoLugar, async (req, res) => {
   try {
     const id = req.params.id;
     const result = await pool.query(`DELETE FROM ${req.tabla} WHERE id = $1 RETURNING *`, [id]);
     if (result.rows.length === 0) return res.status(404).send('No encontrado');
     res.json({ success: true, message: 'Eliminado correctamente' });
-  } catch (error) {
-    console.error('Error en DELETE /api:', error.message);
+  } catch {
     res.status(500).send('Error al eliminar');
   }
 });
 
-// Reservas
-
-// Crear reserva (no requiere autenticación)
+// Crear reserva
 app.post('/reservar', async (req, res) => {
   const { nombre, correo, celular, fecha_inicio, fecha_fin, num_habitacion, id_hotel } = req.body;
   if (!nombre || !correo || !celular || !fecha_inicio || !fecha_fin || !num_habitacion || !id_hotel) {
@@ -233,22 +220,34 @@ app.post('/reservar', async (req, res) => {
     );
     res.json({ success: true, message: 'Reserva creada' });
   } catch (error) {
-    console.error('Error en /reservar:', error.message);
     res.status(500).json({ success: false, message: 'Error al crear reserva' });
   }
 });
 
-// Obtener todas las reservas (requiere autenticación)
+// Obtener todas las reservas
 app.get('/reservas', autenticado, async (req, res) => {
   try {
     const result = await pool.query('SELECT * FROM reserva ORDER BY id DESC');
     res.json(result.rows);
-  } catch (error) {
-    console.error('Error en GET /reservas:', error.message);
+  } catch {
     res.status(500).send('Error al obtener reservas');
   }
 });
 
+// Obtener habitaciones reservadas por hotel
+app.get('/reservas/habitaciones/:id_hotel', async (req, res) => {
+  try {
+    const result = await pool.query(
+      'SELECT num_habitacion FROM reserva WHERE hotel_id = $1',
+      [req.params.id_hotel]
+    );
+    res.json(result.rows.map(r => r.num_habitacion));
+  } catch (error) {
+    res.status(500).send('Error al obtener habitaciones reservadas');
+  }
+});
+
+// Servidor en escucha
 app.listen(PORT, () => {
   console.log(`Servidor iniciado en puerto ${PORT}`);
 });
